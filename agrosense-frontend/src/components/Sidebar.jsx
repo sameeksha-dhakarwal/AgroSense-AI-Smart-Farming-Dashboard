@@ -8,6 +8,7 @@ import {
   ShoppingCart,
   LineChart,
   Map,
+  Edit3,
 } from "lucide-react";
 
 const nav = [
@@ -18,6 +19,7 @@ const nav = [
   { to: "/irrigation", label: "Smart Irrigation", icon: Droplets },
   { to: "/price-forecast", label: "Price Forecast", icon: LineChart },
   { to: "/marketplace", label: "Marketplace", icon: ShoppingCart },
+  { to: "/manual-entry", label: "Manual Entry", icon: Edit3 },
 ];
 
 export default function Sidebar() {

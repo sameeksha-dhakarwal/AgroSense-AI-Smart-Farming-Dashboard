@@ -4,6 +4,9 @@ import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
 import fieldRoutes from "./routes/field.routes.js";
+import readingRoutes from "./routes/reading.routes.js";
+import soilRoutes from "./routes/soil.routes.js";
+import irrigationRoutes from "./routes/irrigation.routes.js";
 
 dotenv.config();
 connectDB();
@@ -12,8 +15,11 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use("/api/soil", soilRoutes);
 
 app.use("/api/auth", authRoutes);
+app.use("/api/readings", readingRoutes);
+app.use("/api/irrigation", irrigationRoutes);
 
 app.get("/", (req, res) => {
   res.send("AgroSense AI Backend Running");

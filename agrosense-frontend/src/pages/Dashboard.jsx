@@ -1,10 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
-import StatCard from "../components/StatCard";
-import ForecastCard from "../components/ForecastCard";
-import StageTracker from "../components/StageTracker";
-import { latestStats, weeklySeries, forecast, stages } from "../data/mockData";
+import { getLatestReading, getWeeklyReadings } from "../api";
+import { getActiveField } from "../utils/activeField";
 
 import {
   ResponsiveContainer,
@@ -17,69 +15,76 @@ import {
 } from "recharts";
 
 export default function Dashboard() {
+  const [latest, setLatest] = useState(null);
+  const [weekly, setWeekly] = useState([]);
+
+  const field = getActiveField();
+
+  useEffect(() => {
+    if (!field) return;
+
+    getLatestReading(field._id).then(setLatest);
+    getWeeklyReadings(field._id).then(setWeekly);
+  }, [field]);
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar />
-
       <div className="flex-1">
         <Topbar />
 
         <main className="p-5 space-y-5">
-          {/* Stat cards */}
+          {/* Stat Cards */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {latestStats.map((s) => (
-              <StatCard key={s.label} {...s} />
+            {[
+              { label: "Soil Moisture", value: latest?.soilMoisture + "%" },
+              { label: "Temperature", value: latest?.temperature + "°C" },
+              { label: "Humidity", value: latest?.humidity + "%" },
+              { label: "Rainfall", value: latest?.rainfall + " mm" },
+            ].map((s) => (
+              <div key={s.label} className="bg-white border rounded-2xl p-4">
+                <div className="text-sm text-gray-500">{s.label}</div>
+                <div className="text-2xl font-bold mt-1">
+                  {latest ? s.value : "--"}
+                </div>
+              </div>
             ))}
           </section>
 
-          <section className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {/* Weekly trends */}
-            <div className="lg:col-span-2 rounded-2xl bg-white border border-gray-200 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-semibold">Weekly Comparison Trends</div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Moisture trend for the past 7 days
-                  </div>
-                </div>
+          {/* Weekly Chart */}
+          <div className="bg-white border rounded-2xl p-4">
+            <div className="font-semibold mb-2">
+              Weekly Soil Moisture Trend
+            </div>
 
-                <select className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white">
-                  <option>Soil Moisture</option>
-                  <option>Temperature</option>
-                  <option>Humidity</option>
-                  <option>Rainfall</option>
-                </select>
+            {weekly.length === 0 ? (
+              <div className="text-sm text-gray-500">
+                No weekly data available
               </div>
-
-              <div className="h-72 mt-4">
+            ) : (
+              <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={weeklySeries}>
+                  <LineChart data={weekly}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
+                    <XAxis
+                      dataKey="createdAt"
+                      tickFormatter={(v) =>
+                        new Date(v).toLocaleDateString()
+                      }
+                    />
                     <YAxis />
                     <Tooltip />
-                    <Line type="monotone" dataKey="moisture" strokeWidth={2} dot={false} />
+                    <Line
+                      type="monotone"
+                      dataKey="soilMoisture"
+                      strokeWidth={2}
+                      dot={false}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-            </div>
-
-            {/* Forecast */}
-            <div className="rounded-2xl bg-white border border-gray-200 p-4">
-              <div className="font-semibold">5-Day Weather Forecast</div>
-              <div className="text-xs text-gray-500 mt-1">
-                Plan irrigation, planting, and harvest
-              </div>
-              <div className="grid grid-cols-1 gap-3 mt-4">
-                {forecast.map((f) => (
-                  <ForecastCard key={f.day} {...f} />
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* Stage tracker */}
-          <StageTracker stages={stages} />
+            )}
+          </div>
         </main>
       </div>
     </div>

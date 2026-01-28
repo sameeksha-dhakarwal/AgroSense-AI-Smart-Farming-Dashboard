@@ -25,3 +25,17 @@ export const authApi = (url, method = "GET", data = null) => {
   const token = getToken();
   return api(url, method, data, token);
 };
+
+export const getLatestReading = (fieldId) =>
+  authApi(`/api/readings/latest/${fieldId}`);
+
+export const getWeeklyReadings = (fieldId) =>
+  authApi(`/api/readings/weekly/${fieldId}`);
+
+export const addReading = (data) =>
+  authApi("/api/readings", "POST", data);
+
+export const analyzeSoil = (data) =>
+  authApi("/api/soil/analyze", "POST", data);
+export const getIrrigationAdvice = (data) =>
+  authApi("/api/irrigation/recommend", "POST", data);

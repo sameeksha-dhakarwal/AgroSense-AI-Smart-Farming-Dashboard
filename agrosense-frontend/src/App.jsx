@@ -11,7 +11,7 @@ import DiseaseScanner from "./pages/DiseaseScanner";
 import Irrigation from "./pages/Irrigation";
 import PriceForecast from "./pages/PriceForecast";
 import Marketplace from "./pages/Marketplace";
-
+import ManualEntry from "./pages/ManualEntry";
 export default function App() {
   return (
     <Routes>
@@ -27,7 +27,7 @@ export default function App() {
       <Route path="/irrigation" element={<Irrigation />} />
       <Route path="/price-forecast" element={<PriceForecast />} />
       <Route path="/marketplace" element={<Marketplace />} />
-
+      <Route path="/manual-entry" element={<ManualEntry />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
