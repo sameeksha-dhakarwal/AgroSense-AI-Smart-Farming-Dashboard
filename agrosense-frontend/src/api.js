@@ -39,3 +39,25 @@ export const analyzeSoil = (data) =>
   authApi("/api/soil/analyze", "POST", data);
 export const getIrrigationAdvice = (data) =>
   authApi("/api/irrigation/recommend", "POST", data);
+
+export const scanDisease = async (file) => {
+  const token = localStorage.getItem("token");
+
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const res = await fetch(
+    "http://localhost:5000/api/disease/scan",
+    {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + token,
+      },
+      body: formData,
+    }
+  );
+
+  return res.json();
+};
+export const getMarketForecast = (data) =>
+  authApi("/api/market/forecast", "POST", data);

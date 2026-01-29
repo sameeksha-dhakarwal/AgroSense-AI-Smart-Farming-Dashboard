@@ -12,6 +12,8 @@ import Irrigation from "./pages/Irrigation";
 import PriceForecast from "./pages/PriceForecast";
 import Marketplace from "./pages/Marketplace";
 import ManualEntry from "./pages/ManualEntry";
+import VoiceAssistant from "./pages/VoiceAssistant";
+
 export default function App() {
   return (
     <Routes>
@@ -29,6 +31,8 @@ export default function App() {
       <Route path="/marketplace" element={<Marketplace />} />
       <Route path="/manual-entry" element={<ManualEntry />} />
       <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/voice" element={<VoiceAssistant />} />
+
     </Routes>
   );
 }

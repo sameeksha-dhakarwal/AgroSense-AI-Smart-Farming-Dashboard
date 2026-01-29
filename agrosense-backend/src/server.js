@@ -7,6 +7,8 @@ import fieldRoutes from "./routes/field.routes.js";
 import readingRoutes from "./routes/reading.routes.js";
 import soilRoutes from "./routes/soil.routes.js";
 import irrigationRoutes from "./routes/irrigation.routes.js";
+import diseaseRoutes from "./routes/disease.routes.js";
+import marketRoutes from "./routes/market.routes.js";
 
 dotenv.config();
 connectDB();
@@ -20,6 +22,8 @@ app.use("/api/soil", soilRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/readings", readingRoutes);
 app.use("/api/irrigation", irrigationRoutes);
+app.use("/api/disease", diseaseRoutes);
+app.use("/api/market", marketRoutes);
 
 app.get("/", (req, res) => {
   res.send("AgroSense AI Backend Running");
