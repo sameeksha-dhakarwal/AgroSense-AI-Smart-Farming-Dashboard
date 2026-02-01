@@ -2,17 +2,17 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
-  Sprout,
-  Droplets,
-  ScanSearch,
-  ShoppingCart,
-  LineChart,
   Map,
+  Sprout,
+  ScanSearch,
+  Droplets,
+  LineChart,
+  ShoppingCart,
   Edit3,
   Mic,
 } from "lucide-react";
 
-const nav = [
+const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/fields", label: "My Fields", icon: Map },
   { to: "/soil-analysis", label: "Soil Analysis", icon: Sprout },
@@ -26,47 +26,57 @@ const nav = [
 
 export default function Sidebar() {
   return (
-    <aside className="w-64 shrink-0 bg-white border-r border-gray-200 min-h-screen">
-      {/* Logo */}
-      <div className="p-5">
-        <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-xl bg-green-600" />
+    <aside className="w-64 shrink-0 bg-white border-r border-gray-200 min-h-screen flex flex-col">
+      {/* ===== Logo ===== */}
+      <div className="p-5 border-b">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-green-600 flex items-center justify-center text-white font-bold">
+            A
+          </div>
           <div>
-            <div className="font-bold leading-tight">AgroSense AI</div>
+            <div className="font-bold leading-tight">
+              AgroSense AI
+            </div>
             <div className="text-xs text-gray-500">
-              Smart Farming Dashboard
+              Smart Farming
             </div>
           </div>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="px-3">
-        {nav.map((item) => (
+      {/* ===== Navigation ===== */}
+      <nav className="flex-1 px-3 py-4 space-y-1">
+        {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
-            key={item.to}
-            to={item.to}
+            key={to}
+            to={to}
             className={({ isActive }) =>
               [
-                "flex items-center gap-3 px-3 py-2 rounded-xl mb-1 transition",
+                "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition",
                 isActive
                   ? "bg-green-50 text-green-700"
                   : "text-gray-700 hover:bg-gray-50",
               ].join(" ")
             }
           >
-            <item.icon size={18} />
-            <span className="text-sm font-medium">{item.label}</span>
+            <Icon
+              size={18}
+              className="shrink-0"
+            />
+            <span>{label}</span>
           </NavLink>
         ))}
       </nav>
 
-      {/* Tip Box */}
-      <div className="p-4 mt-6">
-        <div className="rounded-2xl bg-gray-50 border border-gray-200 p-4">
-          <div className="text-sm font-semibold">Tip</div>
+      {/* ===== Tip Card ===== */}
+      <div className="p-4">
+        <div className="rounded-2xl bg-gray-50 border p-4">
+          <div className="text-sm font-semibold">
+            Tip
+          </div>
           <div className="text-xs text-gray-600 mt-1">
-            Keep soil moisture between 60–70% for healthy growth.
+            Keep soil moisture between 60–70% for healthy
+            growth.
           </div>
         </div>
       </div>
