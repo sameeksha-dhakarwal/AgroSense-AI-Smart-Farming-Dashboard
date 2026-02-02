@@ -6,6 +6,7 @@ import ForecastCard from "../components/ForecastCard";
 import IrrigationProgressCard from "../components/IrrigationProgressCard";
 import { getLatestReading, getWeeklyReadings } from "../api";
 import { getActiveField } from "../utils/activeField";
+import { getUser } from "../utils/auth";
 
 import {
   ResponsiveContainer,
@@ -22,6 +23,8 @@ export default function Dashboard() {
   const [weekly, setWeekly] = useState([]);
 
   const field = getActiveField();
+  const user = getUser();
+  const firstName = user?.name?.split(" ")[0] || "Farmer";
 
   useEffect(() => {
     if (!field) return;
@@ -42,7 +45,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">
-                Welcome back!
+                Welcome {firstName}!
               </h1>
               <p className="text-sm text-gray-500">
                 Here’s what’s happening with your fields today
@@ -54,7 +57,7 @@ export default function Dashboard() {
             </button>
           </div>
 
-          {/* ===== Stat Cards (Full Width) ===== */}
+          {/* ===== Stat Cards ===== */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <StatCard
               label="Soil Moisture"
@@ -95,7 +98,7 @@ export default function Dashboard() {
 
           {/* ===== TWO COLUMN SECTION ===== */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* LEFT COLUMN (2/3 width) */}
+            {/* LEFT COLUMN */}
             <div className="lg:col-span-2 space-y-6">
               <ForecastCard />
 
@@ -134,7 +137,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* RIGHT COLUMN (1/3 width) */}
+            {/* RIGHT COLUMN */}
             <div className="space-y-6">
               <IrrigationProgressCard />
             </div>

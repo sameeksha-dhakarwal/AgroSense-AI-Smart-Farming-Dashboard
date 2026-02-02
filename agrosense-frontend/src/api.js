@@ -61,3 +61,5 @@ export const scanDisease = async (file) => {
 };
 export const getMarketForecast = (data) =>
   authApi("/api/market/forecast", "POST", data);
+export const getFields = () =>
+  authApi("/api/fields");

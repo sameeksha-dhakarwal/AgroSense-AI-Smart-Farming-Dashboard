@@ -1,33 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { Mic, Bell, Map } from "lucide-react";
-import { authApi } from "../api";
-import { setActiveField, getActiveField } from "../utils/activeField";
+import React, { useState } from "react";
+import { Bell, LogOut, Key } from "lucide-react";
+import { getUser, logout } from "../utils/auth";
 
 export default function Topbar() {
-  const [fields, setFields] = useState([]);
-  const [active, setActive] = useState(getActiveField()?._id || "");
-
-  useEffect(() => {
-    authApi("/api/fields").then((res) => {
-      if (Array.isArray(res) && res.length > 0) {
-        setFields(res);
-        if (!getActiveField()) {
-          setActiveField(res[0]);
-          setActive(res[0]._id);
-        }
-      }
-    });
-  }, []);
-
-  const changeField = (id) => {
-    const field = fields.find((f) => f._id === id);
-    setActiveField(field);
-    setActive(id);
-    window.location.reload(); // refresh dashboard data
-  };
+  const [open, setOpen] = useState(false);
+  const user = getUser();
+  const firstName = user?.name?.split(" ")[0] || "User";
 
   return (
-    <header className="flex items-center justify-between gap-4 p-5 bg-white border-b">
+    <header className="flex items-center justify-between px-6 py-4 bg-white border-b">
+      {/* Left */}
       <div>
         <div className="text-lg font-bold">Dashboard</div>
         <div className="text-xs text-gray-500">
@@ -35,36 +17,51 @@ export default function Topbar() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        {/* Field Selector */}
-        <div className="flex items-center gap-2 border rounded-xl px-3 py-2">
-          <Map size={16} />
-          <select
-            className="text-sm outline-none"
-            value={active}
-            onChange={(e) => changeField(e.target.value)}
-          >
-            {fields.map((f) => (
-              <option key={f._id} value={f._id}>
-                {f.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <select className="border rounded-xl px-3 py-2 text-sm">
-          <option>English</option>
-          <option>తెలుగు</option>
-        </select>
-
-        <button className="border rounded-xl p-2">
+      {/* Right */}
+      <div className="flex items-center gap-3 relative">
+        <button className="border rounded-xl p-2 hover:bg-gray-50">
           <Bell size={18} />
         </button>
-        <button className="border rounded-xl p-2">
-          <Mic size={18} />
+
+        {/* Avatar */}
+        <button
+          onClick={() => setOpen(!open)}
+          className="h-9 w-9 rounded-full bg-green-600 text-white font-semibold flex items-center justify-center"
+        >
+          {firstName[0]}
         </button>
 
-        <div className="h-9 w-9 rounded-full bg-green-100" />
+        {/* Dropdown */}
+        {open && (
+          <div className="absolute right-0 top-12 w-48 bg-white border rounded-xl shadow-md z-50">
+            <div className="px-4 py-3 border-b">
+              <div className="text-sm font-semibold">
+                {user?.name}
+              </div>
+              <div className="text-xs text-gray-500">
+                {user?.email}
+              </div>
+            </div>
+
+            <button
+              className="w-full px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50"
+              onClick={() =>
+                alert("Change password feature next")
+              }
+            >
+              <Key size={16} />
+              Change Password
+            </button>
+
+            <button
+              className="w-full px-4 py-2 text-sm flex items-center gap-2 text-red-600 hover:bg-gray-50"
+              onClick={logout}
+            >
+              <LogOut size={16} />
+              Logout
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

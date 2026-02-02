@@ -1,18 +1,34 @@
 import mongoose from "mongoose";
 
-const fieldSchema = new mongoose.Schema(
+const FieldSchema = new mongoose.Schema(
   {
+    name: {
+      type: String,
+      required: true,
+    },
+    area: {
+      type: Number,
+      required: true,
+    },
+    crop: {
+      type: String,
+      required: true,
+    },
+    soilType: {
+      type: String,
+    },
+    location: {
+      latitude: Number,
+      longitude: Number,
+      address: String,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    name: { type: String, required: true },
-    crop: { type: String, required: true },
-    location: { type: String, required: true },
-    area: { type: Number }, // in acres
   },
   { timestamps: true }
 );
 
-export default mongoose.model("Field", fieldSchema);
+export default mongoose.model("Field", FieldSchema);

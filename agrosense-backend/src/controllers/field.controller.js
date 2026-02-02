@@ -1,39 +1,59 @@
 import Field from "../models/Field.js";
 
-/* Create field */
+/* CREATE FIELD */
 export const createField = async (req, res) => {
   try {
+    const {
+      name,
+      area,
+      crop,
+      soilType,
+      latitude,
+      longitude,
+      address,
+    } = req.body;
+
     const field = await Field.create({
-      ...req.body,
-      user: req.user.id,
+      name,
+      area,
+      crop,
+      soilType,
+      location: {
+        latitude,
+        longitude,
+        address,
+      },
+      user: req.user._id,
     });
-    res.json(field);
-  } catch (e) {
-    res.status(400).json({ message: "Failed to create field" });
+
+    res.status(201).json(field);
+  } catch (err) {
+    console.error("CREATE FIELD ERROR:", err);
+    res.status(500).json({ message: err.message });
   }
 };
 
-/* Get user's fields */
+/* GET FIELDS */
 export const getFields = async (req, res) => {
-  const fields = await Field.find({ user: req.user.id });
+  const fields = await Field.find({ user: req.user._id });
   res.json(fields);
 };
 
-/* Update field */
+/* UPDATE FIELD */
 export const updateField = async (req, res) => {
   const field = await Field.findOneAndUpdate(
-    { _id: req.params.id, user: req.user.id },
+    { _id: req.params.id, user: req.user._id },
     req.body,
     { new: true }
   );
   res.json(field);
 };
 
-/* Delete field */
+/* DELETE FIELD */
 export const deleteField = async (req, res) => {
   await Field.findOneAndDelete({
     _id: req.params.id,
-    user: req.user.id,
+    user: req.user._id,
   });
   res.json({ message: "Field deleted" });
 };
