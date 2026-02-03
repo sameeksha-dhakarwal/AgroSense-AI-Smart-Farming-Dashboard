@@ -4,11 +4,12 @@ import Topbar from "../components/Topbar";
 import FieldCard from "../components/FieldCard";
 import AddFieldModal from "../components/AddFieldModal";
 import MapModal from "../components/MapModal";
-import { getFields } from "../api";
+import { getFields, authApi } from "../api";
 
 export default function Fields() {
   const [fields, setFields] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
+  const [editField, setEditField] = useState(null);
   const [mapField, setMapField] = useState(null);
 
   const loadFields = async () => {
@@ -23,6 +24,19 @@ export default function Fields() {
   useEffect(() => {
     loadFields();
   }, []);
+
+  /* 🗑️ Delete field */
+  const deleteField = async (id) => {
+    const ok = window.confirm("Are you sure you want to delete this field?");
+    if (!ok) return;
+
+    try {
+      await authApi(`/api/fields/${id}`, "DELETE");
+      loadFields();
+    } catch {
+      alert("Failed to delete field");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -61,6 +75,8 @@ export default function Fields() {
                   key={field._id}
                   field={field}
                   onMap={setMapField}
+                  onEdit={setEditField}
+                  onDelete={deleteField}
                 />
               ))}
             </section>
@@ -68,7 +84,7 @@ export default function Fields() {
         </main>
       </div>
 
-      {/* ===== Add Field Modal ===== */}
+      {/* ===== ADD FIELD ===== */}
       {showAdd && (
         <AddFieldModal
           onClose={() => setShowAdd(false)}
@@ -76,7 +92,16 @@ export default function Fields() {
         />
       )}
 
-      {/* ===== Map Modal ===== */}
+      {/* ===== EDIT FIELD ===== */}
+      {editField && (
+        <AddFieldModal
+          field={editField}
+          onClose={() => setEditField(null)}
+          onAdded={loadFields}
+        />
+      )}
+
+      {/* ===== MAP MODAL ===== */}
       {mapField && (
         <MapModal
           field={mapField}

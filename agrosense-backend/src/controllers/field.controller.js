@@ -41,13 +41,40 @@ export const getFields = async (req, res) => {
 
 /* UPDATE FIELD */
 export const updateField = async (req, res) => {
-  const field = await Field.findOneAndUpdate(
-    { _id: req.params.id, user: req.user._id },
-    req.body,
-    { new: true }
-  );
-  res.json(field);
+  try {
+    const {
+      name,
+      area,
+      crop,
+      soilType,
+      latitude,
+      longitude,
+      address,
+    } = req.body;
+
+    const field = await Field.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id },
+      {
+        name,
+        area,
+        crop,
+        soilType,
+        location: {
+          latitude,
+          longitude,
+          address,
+        },
+      },
+      { new: true }
+    );
+
+    res.json(field);
+  } catch (err) {
+    console.error("UPDATE FIELD ERROR:", err);
+    res.status(500).json({ message: "Failed to update field" });
+  }
 };
+
 
 /* DELETE FIELD */
 export const deleteField = async (req, res) => {
