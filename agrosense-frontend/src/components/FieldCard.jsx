@@ -1,11 +1,42 @@
-import { MapPin, Pencil, Trash2 } from "lucide-react";
+import { MapPin, Pencil, Trash2, CheckCircle } from "lucide-react";
+import { setActiveField, getActiveField } from "../utils/activeField";
 
 export default function FieldCard({ field, onMap, onEdit, onDelete }) {
+  // 🔒 Guard (VERY IMPORTANT)
+  if (!field) return null;
+
+  const activeField = getActiveField();
+  const isActive = activeField?._id === field._id;
+
+  const selectField = () => {
+    setActiveField(field);
+  };
+
   return (
-    <div className="border rounded-2xl p-4 bg-white relative">
-      {/* Map pin */}
+    <div
+      onClick={selectField}
+      className={`relative cursor-pointer rounded-2xl border bg-white p-4 transition
+        ${
+          isActive
+            ? "border-green-600 ring-1 ring-green-500"
+            : "hover:border-green-400"
+        }
+      `}
+    >
+      {/* Active indicator */}
+      {isActive && (
+        <CheckCircle
+          size={18}
+          className="absolute top-3 left-3 text-green-600"
+        />
+      )}
+
+      {/* Map */}
       <button
-        onClick={() => onMap(field)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onMap(field);
+        }}
         className="absolute top-3 right-3 text-gray-500 hover:text-green-600"
         title="View on map"
       >
@@ -14,7 +45,10 @@ export default function FieldCard({ field, onMap, onEdit, onDelete }) {
 
       {/* Edit */}
       <button
-        onClick={() => onEdit(field)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onEdit(field);
+        }}
         className="absolute top-3 right-10 text-gray-500 hover:text-blue-600"
         title="Edit field"
       >
@@ -23,16 +57,19 @@ export default function FieldCard({ field, onMap, onEdit, onDelete }) {
 
       {/* Delete */}
       <button
-        onClick={() => onDelete(field._id)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete(field._id);
+        }}
         className="absolute top-3 right-16 text-gray-500 hover:text-red-600"
         title="Delete field"
       >
         <Trash2 size={16} />
       </button>
 
-      <h3 className="font-semibold">{field.name}</h3>
+      <h3 className="mt-4 font-semibold">{field.name}</h3>
 
-      <div className="text-sm text-gray-600 mt-1">
+      <div className="mt-1 text-sm text-gray-600">
         🌱 {field.crop}
       </div>
 
@@ -40,7 +77,7 @@ export default function FieldCard({ field, onMap, onEdit, onDelete }) {
         📐 {field.area} acres
       </div>
 
-      <div className="text-xs text-gray-500 mt-1">
+      <div className="mt-1 text-xs text-gray-500">
         {field.location?.address}
       </div>
     </div>
