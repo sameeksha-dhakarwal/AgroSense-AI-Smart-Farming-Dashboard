@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 import StatCard from "../components/StatCard";
 import ForecastCard from "../components/ForecastCard";
 import IrrigationProgressCard from "../components/IrrigationProgressCard";
-
 import { getLatestReading, getWeeklyReadings } from "../api";
+import { getCurrentWeather } from "../api/weather";
 import { getActiveField } from "../utils/activeField";
 
 import {
@@ -19,130 +19,150 @@ import {
 } from "recharts";
 
 export default function Dashboard() {
-  const [activeField, setActiveField] = useState(null);
+  const [field, setField] = useState(getActiveField());
   const [latest, setLatest] = useState(null);
   const [weekly, setWeekly] = useState([]);
+  const [weather, setWeather] = useState(null);
 
-  // 🔄 Load active field on mount
+  // Listen to active field change
   useEffect(() => {
-    const field = getActiveField();
-    setActiveField(field);
+    const handler = () => setField(getActiveField());
+    window.addEventListener("active-field-changed", handler);
+    return () =>
+      window.removeEventListener("active-field-changed", handler);
   }, []);
 
-  // 🔄 Load readings when field changes
+  // Load data when field changes
   useEffect(() => {
-    if (!activeField?._id) return;
+    if (!field) return;
 
-    getLatestReading(activeField._id).then(setLatest);
-    getWeeklyReadings(activeField._id).then(setWeekly);
-  }, [activeField]);
+    // Soil readings
+    getLatestReading(field._id).then(setLatest);
+    getWeeklyReadings(field._id).then(setWeekly);
+
+    // Weather
+    if (field.location?.latitude && field.location?.longitude) {
+      getCurrentWeather(
+        field.location.latitude,
+        field.location.longitude
+      )
+        .then(setWeather)
+        .catch(() => setWeather(null));
+    }
+  }, [field]);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
       <Sidebar />
 
       <div className="flex-1">
         <Topbar />
 
-        <main className="space-y-6 p-6">
-          {/* ===== Header ===== */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">
-                Welcome back!
-              </h1>
-              <p className="text-sm text-gray-500">
-                Here’s what’s happening with your fields today
-              </p>
-            </div>
-
-            <button className="rounded-xl bg-green-600 px-4 py-2 text-sm font-medium text-white">
-              Manage Fields
-            </button>
+        <main className="p-6 space-y-6">
+          {/* Welcome */}
+          <div>
+            <h1 className="text-2xl font-bold">
+              Welcome back{field ? `, ${field.name}` : ""}!
+            </h1>
+            <p className="text-sm text-gray-500">
+              Here’s what’s happening with your fields today
+            </p>
           </div>
 
-          {/* 🚨 No field selected */}
-          {!activeField && (
-            <div className="rounded-2xl border bg-white p-6 text-center text-gray-600">
-              Please select a field from <b>My Fields</b> to view dashboard data.
-            </div>
-          )}
+          {/* Stat Cards */}
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <StatCard
+              label="Soil Moisture"
+              icon="💧"
+              value={
+                latest
+                  ? `${latest.soilMoisture}%`
+                  : "--"
+              }
+              sub={
+                latest ? "From soil sensor" : "No sensor data yet"
+              }
+            />
 
-          {/* ===== Dashboard Content ===== */}
-          {activeField && (
-            <>
-              {/* Stats */}
-              <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                <StatCard
-                  label="Soil Moisture"
-                  value={latest ? `${latest.soilMoisture}%` : "--"}
-                  sub="+5% vs last week"
-                />
-                <StatCard
-                  label="Temperature"
-                  value={latest ? `${latest.temperature}°C` : "--"}
-                  sub="±0% vs last week"
-                />
-                <StatCard
-                  label="Humidity"
-                  value={latest ? `${latest.humidity}%` : "--"}
-                  sub="-3% vs last week"
-                />
-                <StatCard
-                  label="Rainfall"
-                  value={latest ? `${latest.rainfall} mm` : "--"}
-                  sub="+8 mm vs last week"
-                />
-              </section>
+            <StatCard
+              label="Temperature"
+              icon="🌡️"
+              value={
+                weather
+                  ? `${Math.round(weather.main.temp)}°C`
+                  : "--"
+              }
+              sub="Current temperature"
+            />
 
-              {/* Two-column layout */}
-              <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                {/* Left */}
-                <div className="space-y-6 lg:col-span-2">
-                  <ForecastCard field={activeField} />
+            <StatCard
+              label="Humidity"
+              icon="💨"
+              value={
+                weather
+                  ? `${weather.main.humidity}%`
+                  : "--"
+              }
+              sub="Atmospheric humidity"
+            />
 
-                  <div className="rounded-2xl border bg-white p-5">
-                    <div className="mb-3 font-semibold">
-                      Weekly Soil Moisture Trend
-                    </div>
+            <StatCard
+              label="Rainfall"
+              icon="🌧️"
+              value={
+                weather?.rain
+                  ? `${weather.rain["1h"] || 0} mm`
+                  : "0 mm"
+              }
+              sub="Last hour"
+            />
+          </section>
 
-                    {weekly.length === 0 ? (
-                      <div className="text-sm text-gray-500">
-                        No weekly data available
-                      </div>
-                    ) : (
-                      <div className="h-72">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={weekly}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis
-                              dataKey="createdAt"
-                              tickFormatter={(v) =>
-                                new Date(v).toLocaleDateString()
-                              }
-                            />
-                            <YAxis />
-                            <Tooltip />
-                            <Line
-                              type="monotone"
-                              dataKey="soilMoisture"
-                              strokeWidth={2}
-                              dot={false}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )}
+          {/* Two-column layout */}
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left */}
+            <div className="lg:col-span-2 space-y-6">
+              <ForecastCard field={field} />
+
+              <div className="bg-white border rounded-2xl p-5">
+                <div className="font-semibold mb-3">
+                  Weekly Soil Moisture Trend
+                </div>
+
+                {weekly.length === 0 ? (
+                  <div className="text-sm text-gray-500">
+                    No weekly data available
                   </div>
-                </div>
+                ) : (
+                  <div className="h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={weekly}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="createdAt"
+                          tickFormatter={(v) =>
+                            new Date(v).toLocaleDateString()
+                          }
+                        />
+                        <YAxis />
+                        <Tooltip />
+                        <Line
+                          type="monotone"
+                          dataKey="soilMoisture"
+                          stroke="#16a34a"
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </div>
+            </div>
 
-                {/* Right */}
-                <div className="space-y-6">
-                  <IrrigationProgressCard field={activeField} />
-                </div>
-              </section>
-            </>
-          )}
+            {/* Right */}
+            <IrrigationProgressCard />
+          </section>
         </main>
       </div>
     </div>
