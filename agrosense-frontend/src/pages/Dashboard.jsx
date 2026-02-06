@@ -3,10 +3,14 @@ import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 import StatCard from "../components/StatCard";
 import ForecastCard from "../components/ForecastCard";
-import IrrigationProgressCard from "../components/IrrigationProgressCard";
-import { getLatestReading, getWeeklyReadings } from "../api";
+import SmartIrrigationCard from "../components/SmartIrrigationCard";
+import AlertBanner from "../components/AlertBanner";
+
+import { getWeeklyReadings } from "../api";
 import { getCurrentWeather } from "../api/weather";
 import { getActiveField } from "../utils/activeField";
+import { getUserFromToken } from "../utils/auth";
+import { getFieldInsights } from "../utils/agroLogic";
 
 import {
   ResponsiveContainer,
@@ -18,13 +22,29 @@ import {
   CartesianGrid,
 } from "recharts";
 
-export default function Dashboard() {
-  const [field, setField] = useState(getActiveField());
-  const [latest, setLatest] = useState(null);
-  const [weekly, setWeekly] = useState([]);
-  const [weather, setWeather] = useState(null);
+/* 🔹 Soil moisture simulation */
+const simulateSoilMoisture = (weather) => {
+  if (!weather) return null;
 
-  // Listen to active field change
+  const humidity = weather.main.humidity;
+  const rain = weather.rain?.["3h"] || 0;
+
+  let value = 30 + Math.random() * 30;
+  if (humidity > 70) value += 10;
+  if (rain > 0) value += 20;
+
+  return Math.min(100, Math.round(value));
+};
+
+export default function Dashboard() {
+  const user = getUserFromToken();
+
+  const [field, setField] = useState(getActiveField());
+  const [weather, setWeather] = useState(null);
+  const [soilMoisture, setSoilMoisture] = useState(null);
+  const [weekly, setWeekly] = useState([]);
+
+  /* Listen to field change from Topbar */
   useEffect(() => {
     const handler = () => setField(getActiveField());
     window.addEventListener("active-field-changed", handler);
@@ -32,24 +52,29 @@ export default function Dashboard() {
       window.removeEventListener("active-field-changed", handler);
   }, []);
 
-  // Load data when field changes
+  /* Load data when field changes */
   useEffect(() => {
     if (!field) return;
 
-    // Soil readings
-    getLatestReading(field._id).then(setLatest);
     getWeeklyReadings(field._id).then(setWeekly);
 
-    // Weather
     if (field.location?.latitude && field.location?.longitude) {
       getCurrentWeather(
         field.location.latitude,
         field.location.longitude
-      )
-        .then(setWeather)
-        .catch(() => setWeather(null));
+      ).then((data) => {
+        setWeather(data);
+        setSoilMoisture(simulateSoilMoisture(data));
+      });
     }
   }, [field]);
+
+  /* 🔹 Central intelligence */
+  const insights = getFieldInsights({
+    field,
+    weather,
+    soilMoisture,
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -59,29 +84,39 @@ export default function Dashboard() {
         <Topbar />
 
         <main className="p-6 space-y-6">
-          {/* Welcome */}
+          {/* ===== Welcome ===== */}
           <div>
             <h1 className="text-2xl font-bold">
-              Welcome back{field ? `, ${field.name}` : ""}!
+              Welcome back, {user?.name || "Farmer"}!
             </h1>
             <p className="text-sm text-gray-500">
-              Here’s what’s happening with your fields today
+              Field:{" "}
+              <span className="font-medium">
+                {field?.name || "None selected"}
+              </span>
             </p>
           </div>
 
-          {/* Stat Cards */}
+          {/* ===== Alerts ===== */}
+          <div className="space-y-3">
+            {insights?.alerts.map((alert, i) => (
+              <AlertBanner
+                key={i}
+                type={alert.type}
+                message={alert.message}
+              />
+            ))}
+          </div>
+
+          {/* ===== Stats ===== */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <StatCard
               label="Soil Moisture"
               icon="💧"
               value={
-                latest
-                  ? `${latest.soilMoisture}%`
-                  : "--"
+                soilMoisture !== null ? `${soilMoisture}%` : "--"
               }
-              sub={
-                latest ? "From soil sensor" : "No sensor data yet"
-              }
+              sub="Estimated from weather"
             />
 
             <StatCard
@@ -99,9 +134,7 @@ export default function Dashboard() {
               label="Humidity"
               icon="💨"
               value={
-                weather
-                  ? `${weather.main.humidity}%`
-                  : "--"
+                weather ? `${weather.main.humidity}%` : "--"
               }
               sub="Atmospheric humidity"
             />
@@ -110,29 +143,29 @@ export default function Dashboard() {
               label="Rainfall"
               icon="🌧️"
               value={
-                weather?.rain
-                  ? `${weather.rain["1h"] || 0} mm`
+                weather?.rain?.["1h"]
+                  ? `${weather.rain["1h"]} mm`
                   : "0 mm"
               }
               sub="Last hour"
             />
           </section>
 
-          {/* Two-column layout */}
+          {/* ===== Two Column Layout ===== */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left */}
+            {/* LEFT */}
             <div className="lg:col-span-2 space-y-6">
               <ForecastCard field={field} />
 
               <div className="bg-white border rounded-2xl p-5">
-                <div className="font-semibold mb-3">
+                <h3 className="font-semibold mb-3">
                   Weekly Soil Moisture Trend
-                </div>
+                </h3>
 
                 {weekly.length === 0 ? (
-                  <div className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500">
                     No weekly data available
-                  </div>
+                  </p>
                 ) : (
                   <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
@@ -160,8 +193,11 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Right */}
-            <IrrigationProgressCard />
+            {/* RIGHT */}
+            <SmartIrrigationCard
+              soilMoisture={soilMoisture}
+              advice={insights?.irrigationAdvice}
+            />
           </section>
         </main>
       </div>
