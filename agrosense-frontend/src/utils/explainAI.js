@@ -2,28 +2,33 @@ export const explainInsights = ({
   ndvi,
   soilMoisture,
   temperature,
-  rainExpected,
+  crop,
 }) => {
   const reasons = [];
 
   if (ndvi < 0.4)
     reasons.push(
-      "Low NDVI indicates stressed vegetation"
+      "Low NDVI indicates stressed or sparse vegetation."
     );
 
   if (soilMoisture < 40)
     reasons.push(
-      "Soil moisture is below optimal range"
+      "Soil moisture is below optimal levels for crop growth."
     );
 
   if (temperature > 35)
     reasons.push(
-      "High temperature may cause heat stress"
+      "High temperature increases risk of heat stress."
     );
 
-  if (rainExpected)
+  if (crop === "rice" && soilMoisture < 60)
     reasons.push(
-      "Upcoming rainfall influences irrigation advice"
+      "Rice requires higher water availability."
+    );
+
+  if (ndvi >= 0.6)
+    reasons.push(
+      "Healthy vegetation detected based on NDVI."
     );
 
   return reasons;

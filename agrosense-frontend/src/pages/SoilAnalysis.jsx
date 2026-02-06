@@ -3,24 +3,28 @@ import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 import SoilMetric from "../components/SoilMetric";
 import NDVICard from "../components/NDVICard";
+import NDVIHistoryChart from "../components/NDVIHistoryChart";
+import YieldPredictionCard from "../components/YieldPredictionCard";
 
 import { getActiveField } from "../utils/activeField";
 import { getCurrentWeather } from "../api/weather";
 import { getFieldInsights } from "../utils/agroLogic";
 import { calculateNDVI } from "../utils/ndviLogic";
+import { generateNDVIHistory } from "../utils/ndviHistory";
+import { predictYield } from "../utils/yieldPrediction";
 import { explainInsights } from "../utils/explainAI";
 
-/* ================= FIELD-STABLE SOIL SIMULATION ================= */
+/* ================= STABLE SOIL SIMULATION (PER FIELD) ================= */
 const simulateSoilData = (weather, field) => {
   if (!weather || !field) return null;
 
-  // Stable seed per field
   const seed = field._id
     .split("")
     .reduce((sum, c) => sum + c.charCodeAt(0), 0);
 
   const crop = field.crop?.toLowerCase();
-  const baseMoisture = crop === "rice" ? 65 : crop === "bajra" ? 45 : 50;
+  const baseMoisture =
+    crop === "rice" ? 65 : crop === "bajra" ? 45 : 50;
 
   return {
     moisture: Math.max(
@@ -43,7 +47,7 @@ export default function SoilAnalysis() {
   const [weather, setWeather] = useState(null);
   const [soil, setSoil] = useState(null);
 
-  /* Listen for active field change */
+  /* Listen to active field change */
   useEffect(() => {
     const handler = () => setField(getActiveField());
     window.addEventListener("active-field-changed", handler);
@@ -66,7 +70,7 @@ export default function SoilAnalysis() {
     }
   }, [field]);
 
-  /* AI INSIGHTS */
+  /* ================= AI LOGIC ================= */
   const insights = getFieldInsights({
     field,
     weather,
@@ -82,16 +86,31 @@ export default function SoilAnalysis() {
         })
       : null;
 
-  const reasons = insights
-    ? explainInsights({
-        ndvi,
-        soilMoisture: soil?.moisture,
-        temperature: weather?.main?.temp,
-        rainExpected:
-          weather?.rain?.["3h"] > 0 ||
-          weather?.weather?.[0]?.main === "Rain",
-      })
-    : [];
+  const ndviHistory =
+    soil && weather
+      ? generateNDVIHistory({
+          field,
+          weather,
+          soilMoisture: soil.moisture,
+        })
+      : [];
+
+  const yieldPrediction =
+    ndvi && soil && weather
+      ? predictYield({
+          crop: field?.crop?.toLowerCase(),
+          ndvi,
+          soilMoisture: soil.moisture,
+          temperature: weather.main.temp,
+        })
+      : null;
+
+  const reasons = explainInsights({
+    ndvi,
+    soilMoisture: soil?.moisture,
+    temperature: weather?.main?.temp,
+    crop: field?.crop?.toLowerCase(),
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -127,7 +146,11 @@ export default function SoilAnalysis() {
             </div>
 
             <NDVICard ndvi={ndvi} />
+            <YieldPredictionCard value={yieldPrediction} />
           </div>
+
+          {/* ===== NDVI History ===== */}
+          <NDVIHistoryChart data={ndviHistory} />
 
           {/* ===== Alerts ===== */}
           {insights?.alerts?.length > 0 && (

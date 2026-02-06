@@ -12,7 +12,7 @@ export default function YieldPredictionCard({ value }) {
       </div>
 
       <p className="text-sm text-gray-500 mt-1">
-        Based on NDVI, moisture & weather
+        AI-based estimate using NDVI & weather
       </p>
     </div>
   );
