@@ -2,50 +2,52 @@ import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 import SoilMetric from "../components/SoilMetric";
-import NDVICard from "../components/NDVICard";
-import NDVIHistoryChart from "../components/NDVIHistoryChart";
-import YieldPredictionCard from "../components/YieldPredictionCard";
 
 import { getActiveField } from "../utils/activeField";
 import { getCurrentWeather } from "../api/weather";
-import { getFieldInsights } from "../utils/agroLogic";
-import { calculateNDVI } from "../utils/ndviLogic";
-import { generateNDVIHistory } from "../utils/ndviHistory";
-import { predictYield } from "../utils/yieldPrediction";
-import { explainInsights } from "../utils/explainAI";
+import { predictYield } from "../utils/yieldModel";
 
-/* ================= STABLE SOIL SIMULATION (PER FIELD) ================= */
-const simulateSoilData = (weather, field) => {
-  if (!weather || !field) return null;
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
 
-  const seed = field._id
-    .split("")
-    .reduce((sum, c) => sum + c.charCodeAt(0), 0);
+/* -------------------- HELPERS -------------------- */
 
-  const crop = field.crop?.toLowerCase();
-  const baseMoisture =
-    crop === "rice" ? 65 : crop === "bajra" ? 45 : 50;
-
-  return {
-    moisture: Math.max(
-      25,
-      Math.min(85, baseMoisture + (seed % 15) - 7)
+// Generate realistic NDVI history
+const generateNDVIHistory = (base) =>
+  Array.from({ length: 7 }).map((_, i) => ({
+    day: `Day ${i + 1}`,
+    value: Number(
+      Math.max(0.25, Math.min(0.85, base + (Math.random() - 0.5) * 0.08)).toFixed(2)
     ),
-    pH: Number((6.2 + (seed % 10) / 20).toFixed(1)),
-    nitrogen: 45 + (seed % 20),
-    phosphorus: 30 + (seed % 15),
-    potassium: 50 + (seed % 25),
-  };
-};
+  }));
 
-/* ================= STATUS LABEL ================= */
-const status = (val, low, high) =>
-  val < low ? "Low" : val > high ? "Optimal" : "Medium";
+// Simulated soil data (until real sensors)
+const simulateSoil = () => ({
+  moisture: Math.round(35 + Math.random() * 40),
+  pH: Number((6 + Math.random()).toFixed(1)),
+  nitrogen: Math.round(40 + Math.random() * 30),
+  phosphorus: Math.round(25 + Math.random() * 25),
+  potassium: Math.round(45 + Math.random() * 30),
+});
+
+const status = (v, low, high) =>
+  v < low ? "Low" : v > high ? "Optimal" : "Medium";
+
+/* -------------------- COMPONENT -------------------- */
 
 export default function SoilAnalysis() {
   const [field, setField] = useState(getActiveField());
   const [weather, setWeather] = useState(null);
   const [soil, setSoil] = useState(null);
+  const [ndvi, setNdvi] = useState(null);
+  const [ndviHistory, setNdviHistory] = useState([]);
 
   /* Listen to active field change */
   useEffect(() => {
@@ -55,62 +57,85 @@ export default function SoilAnalysis() {
       window.removeEventListener("active-field-changed", handler);
   }, []);
 
-  /* Load weather + soil when field changes */
+  /* Load data per field */
   useEffect(() => {
-    if (!field) return;
+    if (!field?.location) return;
 
-    if (field.location?.latitude && field.location?.longitude) {
-      getCurrentWeather(
-        field.location.latitude,
-        field.location.longitude
-      ).then((data) => {
-        setWeather(data);
-        setSoil(simulateSoilData(data, field));
-      });
-    }
+    getCurrentWeather(
+      field.location.latitude,
+      field.location.longitude
+    ).then((w) => {
+      setWeather(w);
+
+      const soilData = simulateSoil();
+      const ndviBase = soilData.moisture > 55 ? 0.55 : 0.42;
+
+      setSoil(soilData);
+      setNdvi(Number(ndviBase.toFixed(2)));
+      setNdviHistory(generateNDVIHistory(ndviBase));
+    });
   }, [field]);
 
-  /* ================= AI LOGIC ================= */
-  const insights = getFieldInsights({
-    field,
-    weather,
-    soilMoisture: soil?.moisture,
-  });
+  /* -------------------- AI LOGIC -------------------- */
 
-  const ndvi =
-    soil && weather
-      ? calculateNDVI({
-          crop: field?.crop,
-          soilMoisture: soil.moisture,
-          temperature: weather.main.temp,
-        })
-      : null;
-
-  const ndviHistory =
-    soil && weather
-      ? generateNDVIHistory({
-          field,
-          weather,
-          soilMoisture: soil.moisture,
-        })
-      : [];
-
-  const yieldPrediction =
-    ndvi && soil && weather
-      ? predictYield({
-          crop: field?.crop?.toLowerCase(),
-          ndvi,
-          soilMoisture: soil.moisture,
-          temperature: weather.main.temp,
-        })
-      : null;
-
-  const reasons = explainInsights({
+  const yieldPrediction = predictYield({
+    crop: field?.crop,
     ndvi,
     soilMoisture: soil?.moisture,
     temperature: weather?.main?.temp,
-    crop: field?.crop?.toLowerCase(),
+    rainfall: weather?.rain?.["1h"] || 0,
   });
+
+  /* Action Recommendations */
+  const recommendations = [];
+
+  if (soil) {
+    if (soil.moisture < 40) {
+      recommendations.push("Increase irrigation frequency");
+    }
+    if (soil.nitrogen < 50) {
+      recommendations.push("Apply nitrogen-rich fertilizer");
+    }
+    if (ndvi < 0.45) {
+      recommendations.push("Monitor crop stress and nutrient uptake");
+    }
+    if (weather?.main?.temp > 35) {
+      recommendations.push("Avoid irrigation during peak heat hours");
+    }
+  }
+
+  /* Crop Recommendations */
+  const recommendedCrops = [];
+
+  if (soil) {
+    if (soil.moisture > 55 && soil.pH >= 5.5 && soil.pH <= 7.5) {
+      recommendedCrops.push("Rice", "Sugarcane");
+    }
+
+    if (
+      soil.moisture >= 40 &&
+      soil.moisture <= 55 &&
+      soil.nitrogen >= 50 &&
+      soil.phosphorus >= 30 &&
+      soil.potassium >= 45
+    ) {
+      recommendedCrops.push("Wheat", "Maize");
+    }
+
+    if (soil.moisture < 45 && soil.nitrogen < 55) {
+      recommendedCrops.push("Millet (Bajra)", "Sorghum");
+    }
+
+    if (soil.potassium > 60 && soil.nitrogen < 60) {
+      recommendedCrops.push("Soybean", "Groundnut");
+    }
+
+    if (soil.pH >= 5.5 && soil.pH <= 6.8) {
+      recommendedCrops.push("Cotton");
+    }
+  }
+
+  /* -------------------- UI -------------------- */
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -120,7 +145,7 @@ export default function SoilAnalysis() {
         <Topbar />
 
         <main className="p-6 space-y-6">
-          {/* ===== Header ===== */}
+          {/* Header */}
           <div>
             <h1 className="text-2xl font-bold">Soil Analysis</h1>
             <p className="text-sm text-gray-500">
@@ -131,12 +156,10 @@ export default function SoilAnalysis() {
             </p>
           </div>
 
-          {/* ===== Summary Cards ===== */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Top Cards */}
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="bg-white border rounded-2xl p-6">
-              <div className="text-sm text-gray-500">
-                Overall Soil Health
-              </div>
+              <div className="text-sm text-gray-500">Overall Soil Health</div>
               <div className="text-4xl font-bold text-green-600 mt-2">
                 {soil ? "78%" : "--"}
               </div>
@@ -145,84 +168,77 @@ export default function SoilAnalysis() {
               </div>
             </div>
 
-            <NDVICard ndvi={ndvi} />
-            <YieldPredictionCard value={yieldPrediction} />
-          </div>
-
-          {/* ===== NDVI History ===== */}
-          <NDVIHistoryChart data={ndviHistory} />
-
-          {/* ===== Alerts ===== */}
-          {insights?.alerts?.length > 0 && (
             <div className="bg-white border rounded-2xl p-6">
-              <h3 className="font-semibold mb-3">Alerts</h3>
-              <ul className="space-y-2 text-sm">
-                {insights.alerts.map((a, i) => (
-                  <li
-                    key={i}
-                    className={`p-3 rounded-xl ${
-                      a.type === "danger"
-                        ? "bg-red-50 text-red-700"
-                        : "bg-yellow-50 text-yellow-700"
-                    }`}
-                  >
-                    ⚠️ {a.message}
-                  </li>
-                ))}
-              </ul>
+              <div className="text-sm text-gray-500">NDVI Index</div>
+              <div className="text-3xl font-bold mt-2">{ndvi ?? "--"}</div>
+              <div className="w-full h-2 bg-gray-200 rounded-full mt-3">
+                <div
+                  className="h-2 bg-green-500 rounded-full"
+                  style={{ width: `${(ndvi || 0) * 100}%` }}
+                />
+              </div>
+              <div className="text-sm text-gray-500 mt-2">
+                Vegetation health:{" "}
+                {ndvi > 0.6 ? "Excellent" : ndvi > 0.45 ? "Good" : "Moderate"}
+              </div>
             </div>
-          )}
 
-          {/* ===== Soil Metrics ===== */}
-          {soil ? (
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              <SoilMetric
-                label="Moisture"
-                value={soil.moisture}
-                unit="%"
-                status={status(soil.moisture, 40, 65)}
-              />
-              <SoilMetric
-                label="pH Level"
-                value={soil.pH}
-                unit=""
-                status={status(soil.pH, 5.5, 7.5)}
-              />
-              <SoilMetric
-                label="Nitrogen"
-                value={soil.nitrogen}
-                unit="kg/ha"
-                status={status(soil.nitrogen, 50, 75)}
-              />
-              <SoilMetric
-                label="Phosphorus"
-                value={soil.phosphorus}
-                unit="kg/ha"
-                status={status(soil.phosphorus, 30, 60)}
-              />
-              <SoilMetric
-                label="Potassium"
-                value={soil.potassium}
-                unit="kg/ha"
-                status={status(soil.potassium, 50, 85)}
-              />
-            </section>
-          ) : (
-            <p className="text-sm text-gray-500">
-              Select a field to view soil analysis.
-            </p>
-          )}
+            <div className="bg-white border rounded-2xl p-6">
+              <div className="text-sm text-gray-500">Predicted Yield</div>
+              <div className="text-4xl font-bold text-green-600 mt-2">
+                {yieldPrediction ?? "--"}%
+              </div>
+              <div className="text-sm text-gray-500 mt-1">
+                AI-based estimate using NDVI & soil
+              </div>
+            </div>
+          </section>
 
-          {/* ===== Recommendations ===== */}
+          {/* NDVI Trend */}
           <div className="bg-white border rounded-2xl p-6">
-            <h3 className="font-semibold mb-3">
-              AI Recommendations
+            <h3 className="font-semibold mb-4">
+              NDVI Trend (Last 7 Days)
             </h3>
 
-            {insights?.recommendations?.length ? (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={ndviHistory}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="day" />
+                  <YAxis domain={[0, 1]} />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#16a34a"
+                    strokeWidth={3}
+                    dot={{ r: 5 }}
+                    activeDot={{ r: 7 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Soil Metrics */}
+          {soil && (
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <SoilMetric label="Moisture" value={soil.moisture} unit="%" status={status(soil.moisture, 40, 65)} />
+              <SoilMetric label="pH Level" value={soil.pH} status={status(soil.pH, 5.5, 7.5)} />
+              <SoilMetric label="Nitrogen" value={soil.nitrogen} unit="kg/ha" status={status(soil.nitrogen, 50, 80)} />
+              <SoilMetric label="Phosphorus" value={soil.phosphorus} unit="kg/ha" status={status(soil.phosphorus, 30, 60)} />
+              <SoilMetric label="Potassium" value={soil.potassium} unit="kg/ha" status={status(soil.potassium, 45, 85)} />
+            </section>
+          )}
+
+          {/* AI Recommendations */}
+          <div className="bg-white border rounded-2xl p-6">
+            <h3 className="font-semibold mb-3">AI Recommendations</h3>
+
+            {recommendations.length ? (
               <ul className="text-sm text-gray-700 space-y-2">
-                {insights.recommendations.map((rec, i) => (
-                  <li key={i}>🌱 {rec}</li>
+                {recommendations.map((r, i) => (
+                  <li key={i}> {r}</li>
                 ))}
               </ul>
             ) : (
@@ -232,20 +248,27 @@ export default function SoilAnalysis() {
             )}
           </div>
 
-          {/* ===== Explainable AI ===== */}
-          {reasons.length > 0 && (
-            <div className="bg-white border rounded-2xl p-6">
-              <h3 className="font-semibold mb-3">
-                Why this advice?
-              </h3>
+          {/* Recommended Crops */}
+          <div className="bg-white border rounded-2xl p-6">
+            <h3 className="font-semibold mb-3">Recommended Crops</h3>
 
-              <ul className="text-sm text-gray-700 space-y-2">
-                {reasons.map((r, i) => (
-                  <li key={i}>🧠 {r}</li>
+            {recommendedCrops.length ? (
+              <div className="flex flex-wrap gap-3">
+                {recommendedCrops.map((crop, i) => (
+                  <span
+                    key={i}
+                    className="px-4 py-2 rounded-xl bg-green-50 text-green-700 text-sm font-medium"
+                  >
+                     {crop}
+                  </span>
                 ))}
-              </ul>
-            </div>
-          )}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">
+                No suitable crop recommendations for current soil conditions.
+              </p>
+            )}
+          </div>
         </main>
       </div>
     </div>
