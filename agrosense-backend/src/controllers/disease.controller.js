@@ -1,7 +1,10 @@
+import axios from "axios";
+import FormData from "form-data";
+import fs from "fs";
 import DiseaseHistory from "../models/DiseaseHistory.js";
 
 /* =========================
-   Scan Disease
+   Scan Disease (Strict ML Filtering)
    ========================= */
 export const scanDisease = async (req, res) => {
   try {
@@ -11,61 +14,108 @@ export const scanDisease = async (req, res) => {
       return res.status(400).json({ message: "No image uploaded" });
     }
 
-    // Mock AI logic (replace later with ML call)
-    const diseases = [
-      {
-        disease: "Leaf Blight",
-        confidence: 87,
-        description:
-          "Leaf Blight is a fungal disease that causes browning and drying of leaves.",
-        plants: ["Rice", "Wheat", "Maize"],
-        treatment: [
-          "Apply fungicide containing Mancozeb",
-          "Remove infected leaves",
-          "Avoid overhead irrigation",
+    const formData = new FormData();
+    formData.append("file", fs.createReadStream(file.path));
+
+    let mlData;
+
+    try {
+      const mlResponse = await axios.post(
+        "http://127.0.0.1:8000/predict",
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+            Authorization: req.headers.authorization || "",
+          },
+          timeout: 15000,
+        }
+      );
+
+      mlData = mlResponse.data;
+    } catch (mlError) {
+      console.error("ML SERVICE ERROR:", mlError.response?.data || mlError.message);
+      return res.status(500).json({
+        message: "ML service unavailable or unauthorized",
+      });
+    }
+
+    if (!mlData?.predictions?.length) {
+      return res.status(500).json({
+        message: "Invalid response from ML service",
+      });
+    }
+
+    const predictions = mlData.predictions;
+
+    const top1 = predictions[0];
+    const top2 = predictions[1] || { confidence: 0 };
+
+    const confidenceThreshold = 85;
+    const marginThreshold = 10;
+
+    const confidencePass = top1.confidence >= confidenceThreshold;
+    const marginPass =
+      top1.confidence - top2.confidence >= marginThreshold;
+
+    const isHealthy =
+      top1.disease.toLowerCase().includes("healthy");
+
+    let formattedResponse;
+
+    /* =========================
+       Strict Validation Logic
+       ========================= */
+    if (!confidencePass || !marginPass) {
+      formattedResponse = {
+        predictions: [
+          {
+            disease: "Uncertain Diagnosis",
+            confidence: top1.confidence,
+          },
         ],
-      },
-      {
-        disease: "Healthy Leaf",
-        confidence: 92,
+        description:
+          "The AI is not sufficiently confident in this diagnosis. Please upload a clearer image.",
+        plants: [],
+        treatment: [
+          "Ensure good lighting",
+          "Capture the affected area clearly",
+          "Avoid background noise",
+          "Consult agricultural expert",
+        ],
+      };
+    }
+    else if (isHealthy) {
+      formattedResponse = {
+        predictions,
         description:
           "The crop appears healthy with no visible signs of disease.",
-        plants: ["All Crops"],
-        treatment: ["No action needed"],
-      },
-    ];
+        plants: mlData.plants || [],
+        treatment: [
+          "No treatment needed. Continue regular monitoring.",
+        ],
+      };
+    }
+    else {
+      formattedResponse = {
+        predictions,
+        description:
+          mlData.description ||
+          "AI-based crop disease analysis result.",
+        plants: mlData.plants || [],
+        treatment:
+          mlData.treatment ||
+          ["Consult agricultural expert for treatment."],
+      };
+    }
 
-    const mainResult =
-      Math.random() > 0.4 ? diseases[0] : diseases[1];
-
-    const response = {
-      predictions: [
-        {
-          disease: mainResult.disease,
-          confidence: mainResult.confidence,
-        },
-        {
-          disease: "Powdery Mildew",
-          confidence: 45,
-        },
-        {
-          disease: "Rust",
-          confidence: 30,
-        },
-      ],
-      description: mainResult.description,
-      plants: mainResult.plants,
-      treatment: mainResult.treatment,
-    };
-
-    // 🔥 SAVE TO DATABASE
-    const newHistory = await DiseaseHistory.create({
+    await DiseaseHistory.create({
       user: req.user.id,
       image: `http://localhost:5000/uploads/${file.filename}`,
-      result: response,
+      result: formattedResponse,
     });
 
-    return res.json(response);
+    return res.json(formattedResponse);
   } catch (error) {
     console.error("Disease Scan Error:", error);
     return res.status(500).json({
@@ -85,8 +135,39 @@ export const getHistory = async (req, res) => {
 
     return res.json(history);
   } catch (error) {
+    console.error("History Error:", error);
     return res.status(500).json({
       message: "Failed to load history",
+    });
+  }
+};
+/* =========================
+   Delete History
+   ========================= */
+export const deleteHistory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const history = await DiseaseHistory.findOne({
+      _id: id,
+      user: req.user.id,
+    });
+
+    if (!history) {
+      return res.status(404).json({
+        message: "Record not found",
+      });
+    }
+
+    await history.deleteOne();
+
+    return res.json({
+      message: "History deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete Error:", error);
+    return res.status(500).json({
+      message: "Failed to delete history",
     });
   }
 };

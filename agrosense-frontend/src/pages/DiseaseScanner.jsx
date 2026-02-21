@@ -11,7 +11,7 @@ export default function DiseaseScanner() {
   const token = localStorage.getItem("token");
 
   /* =========================
-     Load user scan history
+     Load History
      ========================= */
   useEffect(() => {
     if (!token) return;
@@ -28,7 +28,7 @@ export default function DiseaseScanner() {
   }, [token]);
 
   /* =========================
-     Handle file upload
+     Handle File Upload
      ========================= */
   const handleFileChange = (e) => {
     const f = e.target.files[0];
@@ -39,7 +39,7 @@ export default function DiseaseScanner() {
   };
 
   /* =========================
-     Scan image
+     Scan Image
      ========================= */
   const handleScan = async () => {
     if (!file) {
@@ -58,11 +58,10 @@ export default function DiseaseScanner() {
       const res = await scanDisease(file, token);
       setResult(res);
 
-      // Reload history from backend (source of truth)
       const updatedHistory = await getHistory(token);
       setRecent(updatedHistory);
     } catch (err) {
-      alert("Failed to scan image. Is backend running?");
+      alert("Failed to scan image.");
     } finally {
       setLoading(false);
     }
@@ -80,7 +79,7 @@ export default function DiseaseScanner() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Crop Disease Scanner</h1>
 
-      {/* ================= Upload ================= */}
+      {/* ================= Upload Section ================= */}
       <div className="bg-white border rounded-2xl p-6 space-y-4">
         <label className="block border-2 border-dashed rounded-xl p-8 text-center cursor-pointer">
           <input
@@ -114,25 +113,24 @@ export default function DiseaseScanner() {
         </button>
       </div>
 
-      {/* ================= Tips ================= */}
+      {/* ================= Tips Section ================= */}
       <div className="bg-gray-100 rounded-xl p-4">
         <p className="font-semibold mb-2">Tips for best results:</p>
         <ul className="text-sm text-gray-600 list-disc ml-5 space-y-1">
-          <li>Use good natural lighting</li>
-          <li>Focus on affected area</li>
-          <li>Avoid blurry images</li>
-          <li>Include full leaf</li>
+          <li>Take photos in good natural light</li>
+          <li>Focus clearly on the affected area</li>
+          <li>Avoid blurry or dark images</li>
+          <li>Include the entire leaf or plant part</li>
         </ul>
       </div>
 
-      {/* ================= Result ================= */}
+      {/* ================= Result Section ================= */}
       {result && main && (
         <div className="bg-white border rounded-2xl p-6 space-y-5">
           <h2 className="text-xl font-bold">{main.disease}</h2>
 
           <p className="text-gray-600">{result.description}</p>
 
-          {/* Confidence */}
           <div>
             <p className="text-sm mb-1">Confidence</p>
             <div className="w-full bg-gray-200 rounded-full h-3">
@@ -152,68 +150,86 @@ export default function DiseaseScanner() {
             </p>
           </div>
 
-          {/* Plants */}
-          <p className="text-sm">
-            🌱 Affects:{" "}
-            <strong>{result.plants.join(", ")}</strong>
-          </p>
+          {result.plants?.length > 0 && (
+            <p className="text-sm">
+              🌱 Affects: <strong>{result.plants.join(", ")}</strong>
+            </p>
+          )}
 
-          {/* Treatment */}
           <div>
             <h4 className="font-semibold">Treatment & Precautions</h4>
             <ul className="list-disc ml-5 text-sm">
-              {result.treatment.map((t, i) => (
+              {result.treatment?.map((t, i) => (
                 <li key={i}>{t}</li>
               ))}
             </ul>
           </div>
-
-          {/* Similar diseases */}
-          <div>
-            <h4 className="font-semibold">Similar Diseases</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
-              {result.predictions.slice(1).map((p, i) => (
-                <div key={i} className="border rounded-xl p-3">
-                  <p className="font-medium">{p.disease}</p>
-                  <p className="text-sm text-gray-500">
-                    {p.confidence}% confidence
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       )}
 
-      {/* ================= Recent ================= */}
+      {/* ================= Recent Detections ================= */}
       {recent.length > 0 && (
         <div>
           <h3 className="font-semibold mb-3">Recent Detections</h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {recent.map((r) => (
-              <div
-                key={r.id}
-                onClick={() => setResult(r.result)}
-                className="cursor-pointer bg-white border rounded-xl overflow-hidden hover:shadow"
-              >
-                {r.image && (
-                  <img
-                    src={r.image}
-                    alt=""
-                    className="h-40 w-full object-cover"
-                  />
-                )}
-                <div className="p-3">
-                  <p className="font-medium">
-                    {r.result?.predictions?.[0]?.disease}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {r.result?.predictions?.[0]?.confidence}% confidence
-                  </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {recent.map((r) => {
+              const disease = r.result?.predictions?.[0];
+              const isHealthy =
+                disease?.disease?.toLowerCase().includes("healthy");
+
+              return (
+                <div
+                  key={r._id}
+                  className="bg-white border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition"
+                >
+                  {r.image && (
+                    <img
+                      src={r.image}
+                      alt=""
+                      className="h-48 w-full object-cover"
+                    />
+                  )}
+
+                  <div className="p-4 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-semibold">
+                        {disease?.disease}
+                      </h4>
+
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          isHealthy
+                            ? "bg-green-500 text-white"
+                            : "bg-red-500 text-white"
+                        }`}
+                      >
+                        {isHealthy ? "Healthy" : "Disease"}
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-gray-600">
+                      {r.result?.description}
+                    </p>
+
+                    <details className="text-sm">
+                      <summary className="cursor-pointer font-medium">
+                        View Treatment & Precautions
+                      </summary>
+                      <ul className="list-disc ml-5 mt-2 space-y-1">
+                        {r.result?.treatment?.map((t, i) => (
+                          <li key={i}>{t}</li>
+                        ))}
+                      </ul>
+                    </details>
+
+                    <div className="text-sm text-gray-500">
+                      Confidence: {disease?.confidence}%
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Depends
+from fastapi import FastAPI, UploadFile, File, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import tensorflow as tf
 import numpy as np
@@ -73,46 +73,70 @@ def preprocess_image(image: Image.Image):
     return np.expand_dims(arr, axis=0)
 
 # =========================
-# PREDICT (JWT PROTECTED)
+# PREDICT
 # =========================
 @app.post("/predict")
 async def predict(
     file: UploadFile = File(...),
     user: str = Depends(get_current_user)
 ):
-    image_bytes = await file.read()
-    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    img = preprocess_image(image)
+    try:
+        image_bytes = await file.read()
+        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        img = preprocess_image(image)
 
-    preds = model.predict(img)[0]
-    indexed = sorted(enumerate(preds), key=lambda x: x[1], reverse=True)[:3]
+        preds = model.predict(img)[0]
+        indexed = sorted(
+            enumerate(preds),
+            key=lambda x: x[1],
+            reverse=True
+        )[:3]
 
-    predictions = []
-    for idx, prob in indexed:
-        disease = CLASS_NAMES[idx] if idx < NUM_CLASSES else "Unknown Disease"
-        predictions.append({
-            "disease": disease,
-            "confidence": round(float(prob) * 100, 2),
-        })
+        predictions = []
+        for idx, prob in indexed:
+            disease = CLASS_NAMES[idx] if idx < NUM_CLASSES else "Unknown Disease"
+            predictions.append({
+                "disease": disease,
+                "confidence": round(float(prob) * 100, 2),
+            })
 
-    main = predictions[0]["disease"]
-    info = CLASS_INFO.get(main)
+        top_conf = predictions[0]["confidence"]
 
-    result = {
-        "predictions": predictions,
-        "plants": info["plants"] if info else [],
-        "description": info["description"] if info else "Healthy plant detected.",
-        "treatment": info["treatment"] if info else ["No treatment required"],
-    }
+        if top_conf < 60:
+            result = {
+                "predictions": [
+                    {
+                        "disease": "Uncertain Diagnosis",
+                        "confidence": top_conf,
+                    }
+                ],
+                "plants": [],
+                "description": "The AI is not confident in this diagnosis.",
+                "treatment": [
+                    "Ensure proper lighting",
+                    "Upload a clearer image",
+                    "Consult agricultural expert",
+                ],
+            }
+        else:
+            main = predictions[0]["disease"]
+            info = CLASS_INFO.get(main)
 
-    # 🔐 Save per-user history
-    save_history(user, result)
+            result = {
+                "predictions": predictions,
+                "plants": info["plants"] if info else [],
+                "description": info["description"] if info else "Healthy plant detected.",
+                "treatment": info["treatment"] if info else ["No treatment required"],
+            }
 
-    return result
+        save_history(user, result)
+        return result
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # =========================
-# HISTORY (JWT PROTECTED)
+# HISTORY
 # =========================
 @app.get("/history")
 def get_history(user: str = Depends(get_current_user)):
