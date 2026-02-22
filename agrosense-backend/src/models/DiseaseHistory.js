@@ -16,12 +16,7 @@ const diseaseHistorySchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true } // 👈 This enables createdAt & updatedAt
 );
 
-const DiseaseHistory = mongoose.model(
-  "DiseaseHistory",
-  diseaseHistorySchema
-);
-
-export default DiseaseHistory;
+export default mongoose.model("DiseaseHistory", diseaseHistorySchema);

@@ -1,6 +1,11 @@
 import express from "express";
 import multer from "multer";
-import { scanDisease, getHistory } from "../controllers/disease.controller.js";
+import {
+  scanDisease,
+  getHistory,
+  deleteHistory, // 👈 add this
+} from "../controllers/disease.controller.js";
+
 import { protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
@@ -21,5 +26,5 @@ router.use(protect);
 // Routes
 router.post("/scan", upload.single("image"), scanDisease);
 router.get("/history", getHistory);
-
+router.delete("/history/:id", protect, deleteHistory);
 export default router;

@@ -4,7 +4,7 @@ import fs from "fs";
 import DiseaseHistory from "../models/DiseaseHistory.js";
 
 /* =========================
-   Scan Disease (Strict ML Filtering)
+   Scan Disease (Strict ML Filtering - Stable Version)
    ========================= */
 export const scanDisease = async (req, res) => {
   try {
@@ -19,6 +19,9 @@ export const scanDisease = async (req, res) => {
 
     let mlData;
 
+    /* =========================
+       Call FastAPI ML Service
+       ========================= */
     try {
       const mlResponse = await axios.post(
         "http://127.0.0.1:8000/predict",
@@ -28,13 +31,17 @@ export const scanDisease = async (req, res) => {
             ...formData.getHeaders(),
             Authorization: req.headers.authorization || "",
           },
-          timeout: 15000,
+          timeout: 20000,
         }
       );
 
       mlData = mlResponse.data;
     } catch (mlError) {
-      console.error("ML SERVICE ERROR:", mlError.response?.data || mlError.message);
+      console.error(
+        "ML SERVICE ERROR:",
+        mlError.response?.data || mlError.message
+      );
+
       return res.status(500).json({
         message: "ML service unavailable or unauthorized",
       });
@@ -47,7 +54,6 @@ export const scanDisease = async (req, res) => {
     }
 
     const predictions = mlData.predictions;
-
     const top1 = predictions[0];
     const top2 = predictions[1] || { confidence: 0 };
 
@@ -84,7 +90,7 @@ export const scanDisease = async (req, res) => {
           "Consult agricultural expert",
         ],
       };
-    }
+    } 
     else if (isHealthy) {
       formattedResponse = {
         predictions,
@@ -95,7 +101,7 @@ export const scanDisease = async (req, res) => {
           "No treatment needed. Continue regular monitoring.",
         ],
       };
-    }
+    } 
     else {
       formattedResponse = {
         predictions,
@@ -109,6 +115,9 @@ export const scanDisease = async (req, res) => {
       };
     }
 
+    /* =========================
+       Save To MongoDB
+       ========================= */
     await DiseaseHistory.create({
       user: req.user.id,
       image: `http://localhost:5000/uploads/${file.filename}`,
@@ -141,6 +150,7 @@ export const getHistory = async (req, res) => {
     });
   }
 };
+
 /* =========================
    Delete History
    ========================= */

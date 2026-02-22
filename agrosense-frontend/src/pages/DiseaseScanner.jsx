@@ -67,6 +67,25 @@ export default function DiseaseScanner() {
     }
   };
 
+  const handleDelete = async (id) => {
+    try {
+      await fetch(
+        `http://localhost:5000/api/disease/history/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const updatedHistory = await getHistory(token);
+      setRecent(updatedHistory);
+    } catch (error) {
+      console.error("Delete failed:", error);
+    }
+  };
+
   const main = result?.predictions?.[0];
   const severity =
     main?.confidence > 80
@@ -130,6 +149,16 @@ export default function DiseaseScanner() {
           <h2 className="text-xl font-bold">{main.disease}</h2>
 
           <p className="text-gray-600">{result.description}</p>
+
+          {/* GPT Explanation */}
+          {result.gptExplanation && (
+            <div className="bg-green-50 p-4 rounded-xl text-sm">
+              <p className="font-semibold mb-1">
+                AI Expert Recommendation
+              </p>
+              <p>{result.gptExplanation}</p>
+            </div>
+          )}
 
           <div>
             <p className="text-sm mb-1">Confidence</p>
@@ -223,9 +252,23 @@ export default function DiseaseScanner() {
                       </ul>
                     </details>
 
+                    {/* Timestamp */}
+                    <div className="text-xs text-gray-400">
+                      {new Date(r.createdAt).toLocaleString()}
+                    </div>
+
+                    {/* Confidence */}
                     <div className="text-sm text-gray-500">
                       Confidence: {disease?.confidence}%
                     </div>
+
+                    {/* Delete Button */}
+                    <button
+                      onClick={() => handleDelete(r._id)}
+                      className="text-red-500 text-xs mt-2"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               );

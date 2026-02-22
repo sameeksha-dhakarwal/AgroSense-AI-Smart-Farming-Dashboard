@@ -1,21 +1,18 @@
-from fastapi import FastAPI, UploadFile, File, Depends, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import tensorflow as tf
 import numpy as np
 from PIL import Image
 import io
 
-from api.auth import get_current_user
-from api.history_store import load_history, save_history
-
 app = FastAPI()
 
 # =========================
-# CORS
+# CORS (Allow Node Backend)
 # =========================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],  # allow Node server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -24,7 +21,11 @@ app.add_middleware(
 # =========================
 # LOAD MODEL
 # =========================
-model = tf.keras.models.load_model("models/disease_cnn.keras")
+try:
+    model = tf.keras.models.load_model("models/disease_cnn.keras")
+except Exception as e:
+    print("MODEL LOAD ERROR:", e)
+    raise e
 
 # =========================
 # CLASS NAMES
@@ -73,15 +74,16 @@ def preprocess_image(image: Image.Image):
     return np.expand_dims(arr, axis=0)
 
 # =========================
-# PREDICT
+# PREDICT (ML ONLY - NO AUTH)
 # =========================
 @app.post("/predict")
-async def predict(
-    file: UploadFile = File(...),
-    user: str = Depends(get_current_user)
-):
+async def predict(file: UploadFile = File(...)):
     try:
         image_bytes = await file.read()
+
+        if not image_bytes:
+            raise HTTPException(status_code=400, detail="Empty image file")
+
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         img = preprocess_image(image)
 
@@ -102,6 +104,9 @@ async def predict(
 
         top_conf = predictions[0]["confidence"]
 
+        # =========================
+        # CONFIDENCE FILTERING
+        # =========================
         if top_conf < 60:
             result = {
                 "predictions": [
@@ -129,15 +134,8 @@ async def predict(
                 "treatment": info["treatment"] if info else ["No treatment required"],
             }
 
-        save_history(user, result)
         return result
 
     except Exception as e:
+        print("PREDICTION ERROR:", e)
         raise HTTPException(status_code=500, detail=str(e))
-
-# =========================
-# HISTORY
-# =========================
-@app.get("/history")
-def get_history(user: str = Depends(get_current_user)):
-    return load_history(user)
