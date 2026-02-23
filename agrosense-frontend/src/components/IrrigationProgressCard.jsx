@@ -1,23 +1,22 @@
 import React from "react";
 
-const stages = [
-  { label: "Preparation", status: "done" },
-  { label: "Planting", status: "done" },
-  { label: "Growth", status: "active" },
-  { label: "Harvest", status: "pending" },
-];
+const STAGES = ["Preparation", "Planting", "Growth", "Harvest"];
 
-// simple static progress (can be dynamic later)
-const progress = 65;
+export default function IrrigationProgressCard({ field }) {
+  if (!field) return null;
 
-export default function IrrigationProgressCard() {
+  const currentStage = field.stage || "Preparation";
+  const currentIndex = STAGES.indexOf(currentStage);
+
+  const progress = Math.round((currentIndex / (STAGES.length - 1)) * 100);
+
   return (
     <div className="bg-white border rounded-2xl p-5">
       <div className="font-semibold mb-4">
         Irrigation Progress
       </div>
 
-      {/* Progress Bar */}
+      {/* ===== Progress Bar ===== */}
       <div className="mb-5">
         <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
           <span>Overall Progress</span>
@@ -26,41 +25,48 @@ export default function IrrigationProgressCard() {
 
         <div className="w-full h-2 bg-gray-200 rounded-full">
           <div
-            className="h-2 bg-green-600 rounded-full transition-all"
+            className="h-2 bg-green-600 rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
 
-      {/* Stages */}
+      {/* ===== Lifecycle Stages ===== */}
       <div className="space-y-3">
-        {stages.map((stage) => (
-          <div
-            key={stage.label}
-            className="flex items-center gap-3"
-          >
-            <div
-              className={`h-3 w-3 rounded-full ${
-                stage.status === "done"
-                  ? "bg-green-600"
-                  : stage.status === "active"
-                  ? "bg-yellow-500"
-                  : "bg-gray-300"
-              }`}
-            />
+        {STAGES.map((stage, index) => {
+          let status = "pending";
 
-            <span
-              className={`text-sm ${
-                stage.status === "active"
-                  ? "font-semibold"
-                  : "text-gray-600"
-              }`}
+          if (index < currentIndex) status = "done";
+          if (index === currentIndex) status = "active";
+
+          return (
+            <div
+              key={stage}
+              className="flex items-center gap-3"
             >
-              {stage.label}
-              {stage.status === "active" && " (Ongoing)"}
-            </span>
-          </div>
-        ))}
+              <div
+                className={`h-3 w-3 rounded-full ${
+                  status === "done"
+                    ? "bg-green-600"
+                    : status === "active"
+                    ? "bg-yellow-500"
+                    : "bg-gray-300"
+                }`}
+              />
+
+              <span
+                className={`text-sm ${
+                  status === "active"
+                    ? "font-semibold"
+                    : "text-gray-600"
+                }`}
+              >
+                {stage}
+                {status === "active" && " (Ongoing)"}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

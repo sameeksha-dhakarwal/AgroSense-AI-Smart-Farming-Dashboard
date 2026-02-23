@@ -4,6 +4,7 @@ import Topbar from "../components/Topbar";
 import StatCard from "../components/StatCard";
 import ForecastCard from "../components/ForecastCard";
 import SmartIrrigationCard from "../components/SmartIrrigationCard";
+import IrrigationProgressCard from "../components/IrrigationProgressCard";
 import AlertBanner from "../components/AlertBanner";
 
 import { getWeeklyReadings } from "../api";
@@ -153,10 +154,11 @@ export default function Dashboard() {
 
           {/* ===== Two Column Layout ===== */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* LEFT */}
+            {/* LEFT SIDE */}
             <div className="lg:col-span-2 space-y-6">
               <ForecastCard field={field} />
 
+              {/* Soil Trend Chart */}
               <div className="bg-white border rounded-2xl p-5">
                 <h3 className="font-semibold mb-3">
                   Weekly Soil Moisture Trend
@@ -193,11 +195,19 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* RIGHT */}
-            <SmartIrrigationCard
-              soilMoisture={soilMoisture}
-              advice={insights?.irrigationAdvice}
-            />
+            {/* RIGHT SIDE */}
+            <div className="space-y-6">
+              {/* 🌱 NEW Lifecycle Progress Card */}
+              {field && (
+                <IrrigationProgressCard field={field} />
+              )}
+
+              {/* Existing Smart Irrigation Card */}
+              <SmartIrrigationCard
+                soilMoisture={soilMoisture}
+                advice={insights?.irrigationAdvice}
+              />
+            </div>
           </section>
         </main>
       </div>

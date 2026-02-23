@@ -12,6 +12,7 @@ import diseaseRoutes from "./routes/disease.routes.js";
 import marketRoutes from "./routes/market.routes.js";
 import "./jobs/notification.job.js";
 import irrigationRoutes from "./routes/irrigation.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
 dotenv.config();
 connectDB();
 
@@ -31,7 +32,7 @@ app.use("/api/soil", soilRoutes);
 app.use("/api/irrigation", irrigationRoutes);
 app.use("/api/disease", diseaseRoutes);
 app.use("/api/market", marketRoutes);
-
+app.use("/api/notifications", notificationRoutes);
 app.get("/", (req, res) => {
   res.send("AgroSense AI Backend Running");
 });
