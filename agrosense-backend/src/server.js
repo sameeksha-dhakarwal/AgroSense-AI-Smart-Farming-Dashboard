@@ -7,10 +7,11 @@ import authRoutes from "./routes/auth.routes.js";
 import fieldRoutes from "./routes/field.routes.js";
 import readingRoutes from "./routes/reading.routes.js";
 import soilRoutes from "./routes/soil.routes.js";
-import irrigationRoutes from "./routes/irrigation.routes.js";
+// import irrigationRoutes from "./routes/irrigation.routes.js";
 import diseaseRoutes from "./routes/disease.routes.js";
 import marketRoutes from "./routes/market.routes.js";
-
+import "./jobs/notification.job.js";
+import irrigationRoutes from "./routes/irrigation.routes.js";
 dotenv.config();
 connectDB();
 
