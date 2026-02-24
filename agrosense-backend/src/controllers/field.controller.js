@@ -1,6 +1,6 @@
 import Field from "../models/Field.js";
 import { updateFieldStage } from "../utils/lifecycle.utils.js";
-
+import { calculateHarvestPrediction } from "../utils/harvest.utils.js";
 /* =========================
    CREATE FIELD
 ========================= */
@@ -65,6 +65,8 @@ export const getFieldById = async (req, res) => {
     if (!field) {
       return res.status(404).json({ message: "Field not found" });
     }
+    const harvestData =
+      calculateHarvestPrediction(field);
 
     // 🔥 Auto update lifecycle stage
     updateFieldStage(field);
@@ -161,26 +163,38 @@ export const logIrrigation = async (req, res) => {
 /* =========================
    LOG FERTILIZER
 ========================= */
+/* LOG FERTILIZER */
 export const logFertilizer = async (req, res) => {
   try {
+    const { type } = req.body;
+
     const field = await Field.findOne({
       _id: req.params.id,
       user: req.user._id,
     });
 
     if (!field) {
-      return res.status(404).json({ message: "Field not found" });
+      return res.status(404).json({
+        message: "Field not found",
+      });
     }
 
     field.fertilizerLogs.push({
       date: new Date(),
-      type: req.body.type || "General Fertilizer",
+      type: type || "General Fertilizer",
     });
 
     await field.save();
 
-    res.json({ message: "Fertilizer logged successfully", field });
-  } catch (error) {
-    res.status(500).json({ message: "Failed to log fertilizer" });
+    res.json({
+      message: "Fertilizer logged successfully",
+      field,
+    });
+  } catch (err) {
+    console.error("FERTILIZER LOG ERROR:", err);
+    res.status(500).json({
+      message: "Failed to log fertilizer",
+    });
   }
 };
+

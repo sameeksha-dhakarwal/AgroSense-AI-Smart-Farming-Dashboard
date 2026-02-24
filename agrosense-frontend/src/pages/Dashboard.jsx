@@ -6,6 +6,7 @@ import ForecastCard from "../components/ForecastCard";
 import SmartIrrigationCard from "../components/SmartIrrigationCard";
 import IrrigationProgressCard from "../components/IrrigationProgressCard";
 import AlertBanner from "../components/AlertBanner";
+import HarvestPredictionCard from "../components/HarvestPredictionCard";
 
 import { getWeeklyReadings } from "../api";
 import { getCurrentWeather } from "../api/weather";
@@ -44,6 +45,9 @@ export default function Dashboard() {
   const [weather, setWeather] = useState(null);
   const [soilMoisture, setSoilMoisture] = useState(null);
   const [weekly, setWeekly] = useState([]);
+  const [harvest, setHarvest] = useState(null); // ✅ FIXED POSITION
+
+  const token = localStorage.getItem("token");
 
   /* Listen to field change from Topbar */
   useEffect(() => {
@@ -57,8 +61,21 @@ export default function Dashboard() {
   useEffect(() => {
     if (!field) return;
 
+    // Weekly soil readings
     getWeeklyReadings(field._id).then(setWeekly);
 
+    // Harvest prediction (NEW)
+    fetch(`http://localhost:5000/api/fields/${field._id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.harvestPrediction) {
+          setHarvest(data.harvestPrediction);
+        }
+      });
+
+    // Weather data
     if (field.location?.latitude && field.location?.longitude) {
       getCurrentWeather(
         field.location.latitude,
@@ -197,16 +214,21 @@ export default function Dashboard() {
 
             {/* RIGHT SIDE */}
             <div className="space-y-6">
-              {/* 🌱 NEW Lifecycle Progress Card */}
+              {/* Lifecycle Progress */}
               {field && (
                 <IrrigationProgressCard field={field} />
               )}
 
-              {/* Existing Smart Irrigation Card */}
+              {/* Smart Irrigation */}
               <SmartIrrigationCard
                 soilMoisture={soilMoisture}
                 advice={insights?.irrigationAdvice}
               />
+
+              {/* 🌾 NEW Harvest Prediction Card */}
+              {harvest && (
+                <HarvestPredictionCard data={harvest} />
+              )}
             </div>
           </section>
         </main>
