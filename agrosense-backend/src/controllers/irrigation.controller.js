@@ -2,7 +2,7 @@ import Field from "../models/Field.js";
 import { updateFieldStage } from "../utils/lifecycle.utils.js";
 
 /* =========================================
-   GET IRRIGATION ADVICE (Smart Logic)
+   GET IRRIGATION ADVICE
 ========================================= */
 export const getIrrigationAdvice = (req, res) => {
   try {
@@ -12,22 +12,18 @@ export const getIrrigationAdvice = (req, res) => {
     let water = "0 mm";
     let advice = [];
 
-    // 🌡 Moisture Logic
     if (moisture < 40) {
       status = "Irrigation Required";
       water = "25–30 mm";
       advice.push("Soil moisture is very low.");
-    } 
-    else if (moisture < 60) {
+    } else if (moisture < 60) {
       status = "Moderate Irrigation";
       water = "10–15 mm";
       advice.push("Soil moisture is moderate.");
-    } 
-    else {
+    } else {
       advice.push("Soil moisture is sufficient.");
     }
 
-    // 🌱 Growth Stage Impact
     if (stage === "Growth") {
       advice.push("Crop is in growth stage — higher water demand.");
     }
@@ -37,75 +33,55 @@ export const getIrrigationAdvice = (req, res) => {
       water = "5–8 mm";
     }
 
-    // 🌧 Rain Override
     if (rainExpected) {
       status = "Delay Irrigation";
       water = "0 mm";
       advice.push("Rain is expected — irrigation can be delayed.");
     }
 
-    return res.json({
-      status,
-      water,
-      advice,
-    });
-
+    return res.json({ status, water, advice });
   } catch (error) {
     console.error("Advice Error:", error);
     res.status(500).json({ message: "Failed to generate irrigation advice" });
   }
 };
 
-
 /* =========================================
-   LOG IRRIGATION (Manual Button)
+   LOG IRRIGATION
 ========================================= */
 export const logIrrigation = async (req, res) => {
   try {
-    const { fieldId, amount } = req.body;
+    const fieldId = req.params.id;
+    const { amount } = req.body;
 
     const field = await Field.findById(fieldId);
-
-    if (!field) {
-      return res.status(404).json({ message: "Field not found" });
-    }
+    if (!field) return res.status(404).json({ message: "Field not found" });
 
     field.irrigationLogs.push({
       amount: amount || 0,
       date: new Date(),
     });
 
-    // Update lifecycle stage automatically
     updateFieldStage(field);
-
     await field.save();
 
-    return res.json({
-      message: "Irrigation logged successfully",
-      field,
-    });
-
+    res.json({ message: "Irrigation logged", field });
   } catch (error) {
     console.error("Log Irrigation Error:", error);
-    return res.status(500).json({
-      message: "Failed to log irrigation",
-    });
+    res.status(500).json({ message: "Failed to log irrigation" });
   }
 };
-
 
 /* =========================================
    LOG FERTILIZER
 ========================================= */
 export const logFertilizer = async (req, res) => {
   try {
-    const { fieldId, type } = req.body;
+    const fieldId = req.params.id;
+    const { type } = req.body;
 
     const field = await Field.findById(fieldId);
-
-    if (!field) {
-      return res.status(404).json({ message: "Field not found" });
-    }
+    if (!field) return res.status(404).json({ message: "Field not found" });
 
     field.fertilizerLogs.push({
       type: type || "General",
@@ -114,47 +90,31 @@ export const logFertilizer = async (req, res) => {
 
     await field.save();
 
-    return res.json({
-      message: "Fertilizer logged successfully",
-      field,
-    });
-
+    res.json({ message: "Fertilizer logged", field });
   } catch (error) {
     console.error("Log Fertilizer Error:", error);
-    return res.status(500).json({
-      message: "Failed to log fertilizer",
-    });
+    res.status(500).json({ message: "Failed to log fertilizer" });
   }
 };
-
 
 /* =========================================
    MARK HARVEST COMPLETE
 ========================================= */
 export const markHarvestComplete = async (req, res) => {
   try {
-    const { fieldId } = req.body;
+    const fieldId = req.params.id;
 
     const field = await Field.findById(fieldId);
-
-    if (!field) {
-      return res.status(404).json({ message: "Field not found" });
-    }
+    if (!field) return res.status(404).json({ message: "Field not found" });
 
     field.stage = "Harvest";
     field.harvestDate = new Date();
 
     await field.save();
 
-    return res.json({
-      message: "Harvest marked as complete",
-      field,
-    });
-
+    res.json({ message: "Harvest completed", field });
   } catch (error) {
     console.error("Harvest Error:", error);
-    return res.status(500).json({
-      message: "Failed to mark harvest",
-    });
+    res.status(500).json({ message: "Failed to mark harvest" });
   }
 };
