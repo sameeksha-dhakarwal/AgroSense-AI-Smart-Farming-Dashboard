@@ -7,3 +7,4 @@ agrosense-backend
 
 smart irrigation
 disease scanner
+market place
