@@ -60,6 +60,7 @@ export const logIrrigation = async (req, res) => {
     field.irrigationLogs.push({
       amount: amount || 0,
       date: new Date(),
+      wasCritical: amount >= 25,
     });
 
     updateFieldStage(field);

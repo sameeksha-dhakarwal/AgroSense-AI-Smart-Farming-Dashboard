@@ -39,6 +39,7 @@ const FieldSchema = new mongoose.Schema(
       {
         date: { type: Date, default: Date.now },
         amount: Number,
+        wasCritical: Boolean,
       },
     ],
 

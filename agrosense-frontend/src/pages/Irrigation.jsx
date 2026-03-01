@@ -24,9 +24,7 @@ export default function SmartIrrigation() {
 
   const token = localStorage.getItem("token");
 
-  /* =========================
-     Listen for active field change
-     ========================= */
+  /* Listen for active field change */
   useEffect(() => {
     const handler = () => setField(getActiveField());
     window.addEventListener("active-field-changed", handler);
@@ -34,32 +32,34 @@ export default function SmartIrrigation() {
       window.removeEventListener("active-field-changed", handler);
   }, []);
 
-  /* =========================
-     Load Field Data
-     ========================= */
-  useEffect(() => {
+  /* Load Field Data */
+  const loadFieldData = async () => {
     if (!field) return;
 
-    fetch(`http://localhost:5000/api/fields/${field._id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setField(data);
+    const res = await fetch(
+      `http://localhost:5000/api/fields/${field._id}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
 
-        const chartData =
-          data.irrigationLogs?.map((log) => ({
-            date: new Date(log.date).toLocaleDateString(),
-            water: parseInt(log.amount) || 0,
-          })) || [];
+    const data = await res.json();
+    setField(data);
 
-        setIrrigationData(chartData);
-      });
+    const chartData =
+      data.irrigationLogs?.map((log) => ({
+        date: new Date(log.date).toLocaleDateString(),
+        water: parseInt(log.amount) || 0,
+      })) || [];
+
+    setIrrigationData(chartData);
+  };
+
+  useEffect(() => {
+    loadFieldData();
   }, [field?._id]);
 
-  /* =========================
-     Load Weather
-     ========================= */
+  /* Load Weather */
   useEffect(() => {
     if (!field?.location?.latitude) return;
 
@@ -72,9 +72,7 @@ export default function SmartIrrigation() {
     });
   }, [field]);
 
-  /* =========================
-     Calculate Recommendation
-     ========================= */
+  /* Calculate Recommendation */
   const calculateRecommendation = (weatherData) => {
     if (!weatherData) return;
 
@@ -107,11 +105,9 @@ export default function SmartIrrigation() {
     setRecommendation({ water, status });
   };
 
-  /* =========================
-     Log Irrigation
-     ========================= */
+  /* Log Irrigation */
   const logIrrigation = async () => {
-    if (!field) return;
+    if (!field || !recommendation) return;
 
     await fetch(
       `http://localhost:5000/api/fields/${field._id}/irrigate`,
@@ -122,17 +118,16 @@ export default function SmartIrrigation() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          amount: `${recommendation?.water}mm`,
+          amount: recommendation.water,
         }),
       }
     );
 
-    window.location.reload();
+    await loadFieldData();
+    alert("Irrigation logged successfully ✅");
   };
 
-  /* =========================
-     Log Fertilizer (NEW)
-     ========================= */
+  /* Log Fertilizer */
   const logFertilizer = async () => {
     if (!field) return;
 
@@ -150,7 +145,8 @@ export default function SmartIrrigation() {
       }
     );
 
-    window.location.reload();
+    await loadFieldData();
+    alert("Fertilizer applied successfully 🌱");
   };
 
   return (
@@ -160,39 +156,23 @@ export default function SmartIrrigation() {
         <Topbar />
 
         <main className="p-6 space-y-8">
-          {/* ===== HEADER ===== */}
-          <div className="bg-gradient-to-r from-green-600 to-emerald-500 text-white rounded-2xl p-6 shadow-md">
-            <h1 className="text-2xl font-bold">
-              Smart Irrigation System
-            </h1>
-            <p className="text-sm opacity-90">
-              Intelligent water management powered by AI
-            </p>
-          </div>
 
-          {/* ===== PROGRESS ===== */}
           {field && <IrrigationProgressCard field={field} />}
 
-          {/* ===== WEATHER & SOIL INFO ===== */}
+          {/* Weather & Soil */}
           <div className="grid md:grid-cols-3 gap-6">
             <div className="bg-white border rounded-2xl p-5 flex items-center gap-4">
               <Droplets className="text-blue-500" />
               <div>
-                <p className="text-sm text-gray-500">
-                  Soil Moisture
-                </p>
-                <p className="font-semibold text-lg">
-                  {soilMoisture}%
-                </p>
+                <p className="text-sm text-gray-500">Soil Moisture</p>
+                <p className="font-semibold text-lg">{soilMoisture}%</p>
               </div>
             </div>
 
             <div className="bg-white border rounded-2xl p-5 flex items-center gap-4">
               <Thermometer className="text-red-500" />
               <div>
-                <p className="text-sm text-gray-500">
-                  Temperature
-                </p>
+                <p className="text-sm text-gray-500">Temperature</p>
                 <p className="font-semibold text-lg">
                   {weather
                     ? `${Math.round(weather.main.temp)}°C`
@@ -204,9 +184,7 @@ export default function SmartIrrigation() {
             <div className="bg-white border rounded-2xl p-5 flex items-center gap-4">
               <CloudRain className="text-indigo-500" />
               <div>
-                <p className="text-sm text-gray-500">
-                  Rain Forecast
-                </p>
+                <p className="text-sm text-gray-500">Rain Forecast</p>
                 <p className="font-semibold text-lg">
                   {weather?.rain?.["3h"]
                     ? `${weather.rain["3h"]} mm`
@@ -216,7 +194,7 @@ export default function SmartIrrigation() {
             </div>
           </div>
 
-          {/* ===== AI RECOMMENDATION ===== */}
+          {/* AI Recommendation */}
           <div className="bg-white border rounded-2xl p-6 space-y-4 shadow-sm">
             <h3 className="font-semibold flex items-center gap-2">
               <Leaf className="text-green-600" />
@@ -229,6 +207,17 @@ export default function SmartIrrigation() {
                 <div className="font-semibold">
                   Recommended Water: {recommendation.water} mm
                 </div>
+              </div>
+            )}
+
+            {field?.irrigationLogs?.length > 0 && (
+              <div className="text-sm text-gray-500">
+                Last Irrigated:{" "}
+                {new Date(
+                  field.irrigationLogs[
+                    field.irrigationLogs.length - 1
+                  ].date
+                ).toLocaleDateString()}
               </div>
             )}
 
@@ -249,7 +238,7 @@ export default function SmartIrrigation() {
             </div>
           </div>
 
-          {/* ===== ANALYTICS ===== */}
+          {/* Analytics */}
           <div className="bg-white border rounded-2xl p-6">
             <h3 className="font-semibold mb-4">
               Irrigation History Analytics
@@ -278,6 +267,7 @@ export default function SmartIrrigation() {
               </div>
             )}
           </div>
+
         </main>
       </div>
     </div>
