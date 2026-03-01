@@ -12,6 +12,7 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  Legend,
 } from "recharts";
 import { Droplets, CloudRain, Thermometer, Leaf } from "lucide-react";
 
@@ -24,7 +25,9 @@ export default function SmartIrrigation() {
 
   const token = localStorage.getItem("token");
 
-  /* Listen for active field change */
+  /* =========================
+     Listen for active field change
+  ========================= */
   useEffect(() => {
     const handler = () => setField(getActiveField());
     window.addEventListener("active-field-changed", handler);
@@ -32,7 +35,9 @@ export default function SmartIrrigation() {
       window.removeEventListener("active-field-changed", handler);
   }, []);
 
-  /* Load Field Data */
+  /* =========================
+     Load Field Data
+  ========================= */
   const loadFieldData = async () => {
     if (!field) return;
 
@@ -50,6 +55,7 @@ export default function SmartIrrigation() {
       data.irrigationLogs?.map((log) => ({
         date: new Date(log.date).toLocaleDateString(),
         water: parseInt(log.amount) || 0,
+        critical: log.wasCritical ? 1 : 0,
       })) || [];
 
     setIrrigationData(chartData);
@@ -59,7 +65,9 @@ export default function SmartIrrigation() {
     loadFieldData();
   }, [field?._id]);
 
-  /* Load Weather */
+  /* =========================
+     Load Weather
+  ========================= */
   useEffect(() => {
     if (!field?.location?.latitude) return;
 
@@ -72,7 +80,9 @@ export default function SmartIrrigation() {
     });
   }, [field]);
 
-  /* Calculate Recommendation */
+  /* =========================
+     Calculate Recommendation
+  ========================= */
   const calculateRecommendation = (weatherData) => {
     if (!weatherData) return;
 
@@ -93,7 +103,6 @@ export default function SmartIrrigation() {
 
     if (field?.stage === "Growth") water += 5;
     if (field?.stage === "Harvest") water -= 10;
-
     if (temp > 32) water += 5;
     if (humidity > 80) water -= 5;
 
@@ -105,7 +114,9 @@ export default function SmartIrrigation() {
     setRecommendation({ water, status });
   };
 
-  /* Log Irrigation */
+  /* =========================
+     Log Irrigation
+  ========================= */
   const logIrrigation = async () => {
     if (!field || !recommendation) return;
 
@@ -127,7 +138,9 @@ export default function SmartIrrigation() {
     alert("Irrigation logged successfully ✅");
   };
 
-  /* Log Fertilizer */
+  /* =========================
+     Log Fertilizer
+  ========================= */
   const logFertilizer = async () => {
     if (!field) return;
 
@@ -174,9 +187,7 @@ export default function SmartIrrigation() {
               <div>
                 <p className="text-sm text-gray-500">Temperature</p>
                 <p className="font-semibold text-lg">
-                  {weather
-                    ? `${Math.round(weather.main.temp)}°C`
-                    : "--"}
+                  {weather ? `${Math.round(weather.main.temp)}°C` : "--"}
                 </p>
               </div>
             </div>
@@ -210,14 +221,16 @@ export default function SmartIrrigation() {
               </div>
             )}
 
-            {field?.irrigationLogs?.length > 0 && (
+            {field?.nextIrrigationDate && (
               <div className="text-sm text-gray-500">
-                Last Irrigated:{" "}
-                {new Date(
-                  field.irrigationLogs[
-                    field.irrigationLogs.length - 1
-                  ].date
-                ).toLocaleDateString()}
+                Next Irrigation:{" "}
+                {new Date(field.nextIrrigationDate).toLocaleDateString()}
+              </div>
+            )}
+
+            {field?.yieldScore && (
+              <div className="text-sm text-green-600 font-semibold">
+                Yield Score: {field.yieldScore}%
               </div>
             )}
 
@@ -256,11 +269,20 @@ export default function SmartIrrigation() {
                     <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip />
+                    <Legend />
                     <Line
                       type="monotone"
                       dataKey="water"
                       stroke="#16a34a"
                       strokeWidth={3}
+                      name="Water (mm)"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="critical"
+                      stroke="#dc2626"
+                      strokeWidth={2}
+                      name="Critical"
                     />
                   </LineChart>
                 </ResponsiveContainer>

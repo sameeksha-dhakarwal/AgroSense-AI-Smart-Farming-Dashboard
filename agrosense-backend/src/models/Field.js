@@ -50,6 +50,15 @@ const FieldSchema = new mongoose.Schema(
       },
     ],
 
+    // 🔥 NEW — Auto prediction
+    nextIrrigationDate: Date,
+
+    // 🌾 NEW — Yield score
+    yieldScore: {
+      type: Number,
+      default: 75,
+    },
+
     harvestDate: {
       type: Date,
     },

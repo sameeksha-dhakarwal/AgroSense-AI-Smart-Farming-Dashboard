@@ -24,10 +24,9 @@ import {
   CartesianGrid,
 } from "recharts";
 
-/* 🔹 Soil moisture simulation */
+/* Soil moisture simulation */
 const simulateSoilMoisture = (weather) => {
   if (!weather) return null;
-
   const humidity = weather.main.humidity;
   const rain = weather.rain?.["3h"] || 0;
 
@@ -40,16 +39,14 @@ const simulateSoilMoisture = (weather) => {
 
 export default function Dashboard() {
   const user = getUserFromToken();
-
   const [field, setField] = useState(getActiveField());
   const [weather, setWeather] = useState(null);
   const [soilMoisture, setSoilMoisture] = useState(null);
   const [weekly, setWeekly] = useState([]);
-  const [harvest, setHarvest] = useState(null); // ✅ FIXED POSITION
+  const [harvest, setHarvest] = useState(null);
 
   const token = localStorage.getItem("token");
 
-  /* Listen to field change from Topbar */
   useEffect(() => {
     const handler = () => setField(getActiveField());
     window.addEventListener("active-field-changed", handler);
@@ -57,25 +54,20 @@ export default function Dashboard() {
       window.removeEventListener("active-field-changed", handler);
   }, []);
 
-  /* Load data when field changes */
   useEffect(() => {
     if (!field) return;
 
-    // Weekly soil readings
     getWeeklyReadings(field._id).then(setWeekly);
 
-    // Harvest prediction (NEW)
     fetch(`http://localhost:5000/api/fields/${field._id}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
       .then((data) => {
-        if (data.harvestPrediction) {
-          setHarvest(data.harvestPrediction);
-        }
+        setField(data);
+        setHarvest(data.yieldScore);
       });
 
-    // Weather data
     if (field.location?.latitude && field.location?.longitude) {
       getCurrentWeather(
         field.location.latitude,
@@ -85,24 +77,35 @@ export default function Dashboard() {
         setSoilMoisture(simulateSoilMoisture(data));
       });
     }
-  }, [field]);
+  }, [field?._id]);
 
-  /* 🔹 Central intelligence */
   const insights = getFieldInsights({
     field,
     weather,
     soilMoisture,
   });
 
+  let criticalAlert = null;
+
+  if (field?.nextIrrigationDate) {
+    const today = new Date();
+    const next = new Date(field.nextIrrigationDate);
+
+    if (today > next) {
+      criticalAlert = {
+        type: "danger",
+        message: "Critical: Irrigation overdue!",
+      };
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar />
-
       <div className="flex-1">
         <Topbar />
 
         <main className="p-6 space-y-6">
-          {/* ===== Welcome ===== */}
           <div>
             <h1 className="text-2xl font-bold">
               Welcome back, {user?.name || "Farmer"}!
@@ -115,8 +118,14 @@ export default function Dashboard() {
             </p>
           </div>
 
-          {/* ===== Alerts ===== */}
           <div className="space-y-3">
+            {criticalAlert && (
+              <AlertBanner
+                type={criticalAlert.type}
+                message={criticalAlert.message}
+              />
+            )}
+
             {insights?.alerts.map((alert, i) => (
               <AlertBanner
                 key={i}
@@ -126,7 +135,6 @@ export default function Dashboard() {
             ))}
           </div>
 
-          {/* ===== Stats ===== */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <StatCard
               label="Soil Moisture"
@@ -169,13 +177,10 @@ export default function Dashboard() {
             />
           </section>
 
-          {/* ===== Two Column Layout ===== */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* LEFT SIDE */}
             <div className="lg:col-span-2 space-y-6">
               <ForecastCard field={field} />
 
-              {/* Soil Trend Chart */}
               <div className="bg-white border rounded-2xl p-5">
                 <h3 className="font-semibold mb-3">
                   Weekly Soil Moisture Trend
@@ -212,22 +217,18 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* RIGHT SIDE */}
             <div className="space-y-6">
-              {/* Lifecycle Progress */}
               {field && (
                 <IrrigationProgressCard field={field} />
               )}
 
-              {/* Smart Irrigation */}
               <SmartIrrigationCard
                 soilMoisture={soilMoisture}
                 advice={insights?.irrigationAdvice}
               />
 
-              {/* 🌾 NEW Harvest Prediction Card */}
               {harvest && (
-                <HarvestPredictionCard data={harvest} />
+                <HarvestPredictionCard value={harvest} />
               )}
             </div>
           </section>
