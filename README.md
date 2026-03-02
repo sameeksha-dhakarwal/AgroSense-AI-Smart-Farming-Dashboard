@@ -5,6 +5,4 @@ agrosense-ml
 agrosense-frontend
 agrosense-backend
 
-smart irrigation
-disease scanner
-market place
+
