@@ -5,60 +5,98 @@ const FieldSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
+      trim: true,
     },
+
     area: {
       type: Number,
       required: true,
+      min: 0,
     },
+
     crop: {
       type: String,
       required: true,
-    },
-    soilType: {
-      type: String,
-    },
-    location: {
-      latitude: Number,
-      longitude: Number,
-      address: String,
+      trim: true,
     },
 
-    // 🌱 Lifecycle
+    soilType: {
+      type: String,
+      trim: true,
+    },
+
+    location: {
+      latitude: { type: Number },
+      longitude: { type: Number },
+      address: { type: String },
+    },
+
+    /* ===============================
+       🌱 Lifecycle
+    =============================== */
     stage: {
       type: String,
       enum: ["Preparation", "Planting", "Growth", "Harvest"],
       default: "Preparation",
     },
+
     stageStartDate: {
       type: Date,
       default: Date.now,
     },
 
-    // 💧 Logs
+    /* ===============================
+       💧 Irrigation Logs
+    =============================== */
     irrigationLogs: [
       {
         date: { type: Date, default: Date.now },
-        amount: Number,
-        wasCritical: Boolean,
+        amount: { type: Number, default: 0 },
+        wasCritical: { type: Boolean, default: false },
       },
     ],
 
+    /* ===============================
+       🌡 Soil Moisture Logs
+       (For Weekly Graph)
+    =============================== */
+    soilMoistureLogs: [
+      {
+        date: { type: Date, default: Date.now },
+        value: { type: Number, required: true },
+      },
+    ],
+
+    /* ===============================
+       🌿 Fertilizer Logs
+    =============================== */
     fertilizerLogs: [
       {
         date: { type: Date, default: Date.now },
-        type: String,
+        type: { type: String, default: "General" },
       },
     ],
 
-    // 🔥 NEW — Auto prediction
-    nextIrrigationDate: Date,
+    /* ===============================
+       🔥 Auto Irrigation Prediction
+    =============================== */
+    nextIrrigationDate: {
+      type: Date,
+    },
 
-    // 🌾 NEW — Yield score
+    /* ===============================
+       🌾 Yield Score
+    =============================== */
     yieldScore: {
       type: Number,
       default: 75,
+      min: 0,
+      max: 100,
     },
 
+    /* ===============================
+       🌾 Harvest
+    =============================== */
     harvestDate: {
       type: Date,
     },

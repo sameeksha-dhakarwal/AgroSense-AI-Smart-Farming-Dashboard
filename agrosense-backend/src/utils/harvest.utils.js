@@ -1,5 +1,5 @@
 export const calculateHarvestPrediction = (field) => {
-  if (!field.stageStartDate) return null;
+  if (!field || !field.createdAt) return null;
 
   const now = new Date();
 
@@ -12,8 +12,7 @@ export const calculateHarvestPrediction = (field) => {
     Potato: 95,
   };
 
-  const totalDuration =
-    cropDurations[field.crop] || 100;
+  const totalDuration = cropDurations[field.crop] || 100;
 
   const plantingDate = new Date(field.createdAt);
 
@@ -43,7 +42,7 @@ export const calculateHarvestPrediction = (field) => {
     yieldPerHectare[field.crop] || 4000;
 
   const estimatedYieldKg =
-    (field.area * yieldRate).toFixed(0);
+    Math.round(field.area * yieldRate);
 
   return {
     predictedHarvestDate,

@@ -8,7 +8,6 @@ import IrrigationProgressCard from "../components/IrrigationProgressCard";
 import AlertBanner from "../components/AlertBanner";
 import HarvestPredictionCard from "../components/HarvestPredictionCard";
 
-import { getWeeklyReadings } from "../api";
 import { getCurrentWeather } from "../api/weather";
 import { getActiveField } from "../utils/activeField";
 import { getUserFromToken } from "../utils/auth";
@@ -39,6 +38,7 @@ const simulateSoilMoisture = (weather) => {
 
 export default function Dashboard() {
   const user = getUserFromToken();
+
   const [field, setField] = useState(getActiveField());
   const [weather, setWeather] = useState(null);
   const [soilMoisture, setSoilMoisture] = useState(null);
@@ -47,6 +47,7 @@ export default function Dashboard() {
 
   const token = localStorage.getItem("token");
 
+  /* Listen to field change */
   useEffect(() => {
     const handler = () => setField(getActiveField());
     window.addEventListener("active-field-changed", handler);
@@ -54,20 +55,49 @@ export default function Dashboard() {
       window.removeEventListener("active-field-changed", handler);
   }, []);
 
+  /* Load data SAFELY */
   useEffect(() => {
-    if (!field) return;
+    if (!field?._id) return;
 
-    getWeeklyReadings(field._id).then(setWeekly);
+    /* Weekly soil moisture */
+    fetch(
+      `http://localhost:5000/api/fields/${field._id}/weekly-moisture`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (!Array.isArray(data)) {
+          setWeekly([]);
+          return;
+        }
 
+        const formatted = data.map((item) => ({
+          date: new Date(item.date).toLocaleDateString(),
+          value: item.value,
+        }));
+
+        setWeekly(formatted);
+      })
+      .catch(() => setWeekly([]));
+
+    /* Fetch field (without triggering infinite loop) */
     fetch(`http://localhost:5000/api/fields/${field._id}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
       .then((data) => {
-        setField(data);
-        setHarvest(data.yieldScore);
+        if (!data?._id) return;
+
+        // 🔥 DO NOT call setField again (prevents loop issues)
+        // Only update derived state
+        if (data.harvestPrediction) {
+          setHarvest(data.harvestPrediction);
+        }
       });
 
+    /* Weather */
     if (field.location?.latitude && field.location?.longitude) {
       getCurrentWeather(
         field.location.latitude,
@@ -106,6 +136,7 @@ export default function Dashboard() {
         <Topbar />
 
         <main className="p-6 space-y-6">
+          {/* Welcome */}
           <div>
             <h1 className="text-2xl font-bold">
               Welcome back, {user?.name || "Farmer"}!
@@ -118,6 +149,7 @@ export default function Dashboard() {
             </p>
           </div>
 
+          {/* Alerts */}
           <div className="space-y-3">
             {criticalAlert && (
               <AlertBanner
@@ -126,7 +158,7 @@ export default function Dashboard() {
               />
             )}
 
-            {insights?.alerts.map((alert, i) => (
+            {insights?.alerts?.map((alert, i) => (
               <AlertBanner
                 key={i}
                 type={alert.type}
@@ -135,6 +167,7 @@ export default function Dashboard() {
             ))}
           </div>
 
+          {/* Stats */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <StatCard
               label="Soil Moisture"
@@ -177,10 +210,12 @@ export default function Dashboard() {
             />
           </section>
 
+          {/* Layout */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               <ForecastCard field={field} />
 
+              {/* Persistent Weekly Graph */}
               <div className="bg-white border rounded-2xl p-5">
                 <h3 className="font-semibold mb-3">
                   Weekly Soil Moisture Trend
@@ -191,24 +226,18 @@ export default function Dashboard() {
                     No weekly data available
                   </p>
                 ) : (
-                  <div className="h-72">
+                  <div className="h-72 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={weekly}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                          dataKey="createdAt"
-                          tickFormatter={(v) =>
-                            new Date(v).toLocaleDateString()
-                          }
-                        />
+                        <XAxis dataKey="date" />
                         <YAxis />
                         <Tooltip />
                         <Line
                           type="monotone"
-                          dataKey="soilMoisture"
+                          dataKey="value"
                           stroke="#16a34a"
-                          strokeWidth={2}
-                          dot={false}
+                          strokeWidth={3}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -228,7 +257,7 @@ export default function Dashboard() {
               />
 
               {harvest && (
-                <HarvestPredictionCard value={harvest} />
+                <HarvestPredictionCard data={harvest} />
               )}
             </div>
           </section>

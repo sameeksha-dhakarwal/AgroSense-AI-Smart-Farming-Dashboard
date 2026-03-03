@@ -8,24 +8,46 @@ import {
   deleteField,
   logIrrigation,
   logFertilizer,
+  getWeeklySoilMoisture
 } from "../controllers/field.controller.js";
 
 const router = express.Router();
 
-/* CREATE FIELD */
+/* =========================
+   CREATE FIELD
+========================= */
 router.post("/", auth, createField);
 
-/* GET ALL FIELDS */
+/* =========================
+   GET ALL FIELDS
+========================= */
 router.get("/", auth, getFields);
 
-/* GET SINGLE FIELD (For lifecycle progress) */
+/* =========================
+   WEEKLY SOIL MOISTURE
+   ⚠️ MUST COME BEFORE /:id
+========================= */
+router.get("/:id/weekly-moisture", auth, getWeeklySoilMoisture);
+
+/* =========================
+   GET SINGLE FIELD
+========================= */
 router.get("/:id", auth, getFieldById);
 
-/* UPDATE FIELD */
+/* =========================
+   UPDATE FIELD
+========================= */
 router.put("/:id", auth, updateField);
 
-/* DELETE FIELD */
+/* =========================
+   DELETE FIELD
+========================= */
 router.delete("/:id", auth, deleteField);
+
+/* =========================
+   IRRIGATION & FERTILIZER
+========================= */
 router.post("/:id/irrigate", auth, logIrrigation);
 router.post("/:id/fertilize", auth, logFertilizer);
+
 export default router;
