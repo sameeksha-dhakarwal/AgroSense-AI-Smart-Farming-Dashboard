@@ -33,8 +33,15 @@ export default function App() {
         <Route path="/disease-scanner" element={<DiseaseScanner />} />
         <Route path="/irrigation" element={<Irrigation />} />
         <Route path="/price-forecast" element={<PriceForecast />} />
+
+        {/* ✅ NEW E-commerce route */}
+        <Route path="/ecommerce" element={<Marketplace />} />
+
         <Route path="/marketplace" element={<Marketplace />} />
+
+        {/* Keeping Manual Entry route to avoid breaking anything */}
         <Route path="/manual-entry" element={<ManualEntry />} />
+
         <Route path="/voice" element={<VoiceAssistant />} />
       </Route>
 

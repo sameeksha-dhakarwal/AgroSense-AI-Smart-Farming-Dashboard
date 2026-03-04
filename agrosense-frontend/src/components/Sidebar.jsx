@@ -8,7 +8,7 @@ import {
   Droplets,
   LineChart,
   ShoppingCart,
-  Edit3,
+  Store,
   Mic,
 } from "lucide-react";
 
@@ -19,8 +19,14 @@ const navItems = [
   { to: "/disease-scanner", label: "Disease Scanner", icon: ScanSearch },
   { to: "/irrigation", label: "Smart Irrigation", icon: Droplets },
   { to: "/price-forecast", label: "Price Forecast", icon: LineChart },
+
+  /* ===== NEW E-COMMERCE ITEM ===== */
+  { to: "/ecommerce", label: "E-commerce", icon: Store },
+
   { to: "/marketplace", label: "Marketplace", icon: ShoppingCart },
-  { to: "/manual-entry", label: "Manual Entry", icon: Edit3 },
+
+  /* ===== Manual Entry Removed ===== */
+
   { to: "/voice", label: "Voice Assistant", icon: Mic },
 ];
 
@@ -59,10 +65,7 @@ export default function Sidebar() {
               ].join(" ")
             }
           >
-            <Icon
-              size={18}
-              className="shrink-0"
-            />
+            <Icon size={18} className="shrink-0" />
             <span>{label}</span>
           </NavLink>
         ))}
