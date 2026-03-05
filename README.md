@@ -5,4 +5,7 @@ agrosense-ml
 agrosense-frontend
 agrosense-backend
 
+E-commerce
+Marketplace
+
 
