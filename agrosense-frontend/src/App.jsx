@@ -14,9 +14,9 @@ import PriceForecast from "./pages/PriceForecast";
 import Marketplace from "./pages/Marketplace";
 import ManualEntry from "./pages/ManualEntry";
 import VoiceAssistant from "./pages/VoiceAssistant";
-
+import CartPage from "./pages/CartPage";
 import DashboardLayout from "./layouts/DashboardLayout";
-
+import ProductDetails from "./pages/ProductDetails";
 export default function App() {
   return (
     <Routes>
@@ -33,12 +33,12 @@ export default function App() {
         <Route path="/disease-scanner" element={<DiseaseScanner />} />
         <Route path="/irrigation" element={<Irrigation />} />
         <Route path="/price-forecast" element={<PriceForecast />} />
-
+        <Route path="/cart" element={<CartPage />} />
         {/* ✅ NEW E-commerce route */}
         <Route path="/ecommerce" element={<Marketplace />} />
 
         <Route path="/marketplace" element={<Marketplace />} />
-
+        <Route path="/product/:id" element={<ProductDetails />} />
         {/* Keeping Manual Entry route to avoid breaking anything */}
         <Route path="/manual-entry" element={<ManualEntry />} />
 
