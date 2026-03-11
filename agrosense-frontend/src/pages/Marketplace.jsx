@@ -1,13 +1,24 @@
 import React from "react";
+import { useState } from "react";
+
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 
 import ProductCard from "../components/ProductCard";
+import CategoryGrid from "../components/CategoryGrid";
+
 import { products } from "../data/products";
 
 export default function Marketplace() {
+
+  const [category, setCategory] = useState(null);
+
+  const filteredProducts = category
+    ? products.filter(p => p.category === category).slice(0, 6)
+    : products.slice(0, 6);
+
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="flex bg-gray-50 min-h-screen">
 
       <Sidebar />
 
@@ -15,24 +26,49 @@ export default function Marketplace() {
 
         <Topbar />
 
-        <main className="p-6">
+        <div className="p-6 space-y-6">
 
-          <h2 className="text-xl font-bold mb-4">
-            Today's Offers
-          </h2>
+          {/* SEARCH */}
+          <div className="flex gap-3">
+            <input
+              placeholder="Search for products, brands, categories..."
+              className="flex-1 border rounded-xl p-3"
+            />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-
+            <button className="border px-5 rounded-xl">
+              Cart (0)
+            </button>
           </div>
 
-        </main>
+          {/* CATEGORIES */}
+          <div>
+            <h2 className="font-semibold mb-4 text-lg">
+              Categories
+            </h2>
 
+            <CategoryGrid setCategory={setCategory} />
+          </div>
+
+          {/* PRODUCTS */}
+          <div>
+            <h2 className="font-semibold mb-4 text-lg">
+              {category || "Today's Offers"}
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+
+              {filteredProducts.map(product => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                />
+              ))}
+
+            </div>
+          </div>
+
+        </div>
       </div>
-
     </div>
   );
 }
