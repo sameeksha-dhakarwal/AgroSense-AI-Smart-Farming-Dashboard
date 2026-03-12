@@ -86,3 +86,6 @@ export const getMarketForecast = (data) =>
 ========================= */
 export const getFields = () =>
   authApi("/api/fields");
+
+export const getProducts = () =>
+authApi("/api/products");
