@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
@@ -6,15 +6,32 @@ import Topbar from "../components/Topbar";
 import ProductCard from "../components/ProductCard";
 import CategoryGrid from "../components/CategoryGrid";
 
-import { products } from "../data/products";
 import { useCart } from "../context/CartContext";
+import { getProducts } from "../api";
 
 export default function Marketplace() {
 
   const [category, setCategory] = useState(null);
   const [search, setSearch] = useState("");
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const { cart } = useCart();
+
+  /* Fetch products from backend */
+  useEffect(() => {
+
+    getProducts()
+      .then((data) => {
+        setProducts(data || []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load products", err);
+        setLoading(false);
+      });
+
+  }, []);
 
   /* Filter products by category */
   let filteredProducts = category
@@ -23,13 +40,15 @@ export default function Marketplace() {
 
   /* Apply search */
   if (search.trim() !== "") {
+
     const term = search.toLowerCase();
 
     filteredProducts = filteredProducts.filter(p =>
-      p.name.toLowerCase().includes(term) ||
-      p.brand.toLowerCase().includes(term) ||
-      p.category.toLowerCase().includes(term)
+      p.name?.toLowerCase().includes(term) ||
+      p.brand?.toLowerCase().includes(term) ||
+      p.category?.toLowerCase().includes(term)
     );
+
   }
 
   /* Limit to 6 products */
@@ -83,7 +102,13 @@ export default function Marketplace() {
               {category || "Today's Offers"}
             </h2>
 
-            {filteredProducts.length === 0 ? (
+            {loading ? (
+
+              <div className="text-gray-500">
+                Loading products...
+              </div>
+
+            ) : filteredProducts.length === 0 ? (
 
               <div className="text-gray-500">
                 No products found
@@ -96,7 +121,7 @@ export default function Marketplace() {
                 {filteredProducts.map(product => (
 
                   <ProductCard
-                    key={product.id}
+                    key={product._id}
                     product={product}
                   />
 

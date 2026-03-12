@@ -88,4 +88,4 @@ export const getFields = () =>
   authApi("/api/fields");
 
 export const getProducts = () =>
-authApi("/api/products");
+  authApi("/api/products");
