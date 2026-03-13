@@ -89,3 +89,9 @@ export const getFields = () =>
 
 export const getProducts = () =>
   authApi("/api/products");
+
+export const getListings = () =>
+  authApi("/api/listings");
+
+export const createListing = (data) =>
+  authApi("/api/listings","POST",data);

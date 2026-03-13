@@ -12,6 +12,7 @@ import DiseaseScanner from "./pages/DiseaseScanner";
 import Irrigation from "./pages/Irrigation";
 import PriceForecast from "./pages/PriceForecast";
 import Marketplace from "./pages/Marketplace";
+import Ecommerce from "./pages/Ecommerce";
 import ManualEntry from "./pages/ManualEntry";
 import VoiceAssistant from "./pages/VoiceAssistant";
 import CartPage from "./pages/CartPage";
@@ -35,7 +36,7 @@ export default function App() {
         <Route path="/price-forecast" element={<PriceForecast />} />
         <Route path="/cart" element={<CartPage />} />
         {/* ✅ NEW E-commerce route */}
-        <Route path="/ecommerce" element={<Marketplace />} />
+        <Route path="/ecommerce" element={<Ecommerce />} />
 
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/product/:id" element={<ProductDetails />} />

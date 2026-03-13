@@ -37,7 +37,7 @@ export default function CartPage() {
             {cart.map((item) => (
 
               <div
-                key={item.id}
+                key={item._id}
                 className="flex items-center justify-between bg-white p-4 border rounded-xl"
               >
 
@@ -67,7 +67,7 @@ export default function CartPage() {
                   </div>
 
                   <button
-                    onClick={() => removeFromCart(item.id)}
+                    onClick={() => removeFromCart(item._id)}
                     className="text-red-600 text-sm"
                   >
                     Remove

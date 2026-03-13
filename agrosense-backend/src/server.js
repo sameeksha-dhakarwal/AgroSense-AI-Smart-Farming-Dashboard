@@ -14,6 +14,7 @@ import "./jobs/notification.job.js";
 import irrigationRoutes from "./routes/irrigation.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import productRoutes from "./routes/product.routes.js";
+import marketplaceRoutes from "./routes/marketplace.routes.js";
 dotenv.config();
 connectDB();
 
@@ -35,6 +36,7 @@ app.use("/api/disease", diseaseRoutes);
 app.use("/api/market", marketRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/products",productRoutes);
+app.use("/api/listings", marketplaceRoutes);
 app.get("/", (req, res) => {
   res.send("AgroSense AI Backend Running");
 });
