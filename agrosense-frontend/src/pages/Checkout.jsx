@@ -1,55 +1,57 @@
+import Sidebar from "../components/Sidebar";
+import Topbar from "../components/Topbar";
 import { useCart } from "../context/CartContext";
-import { authApi } from "../api";
 
 export default function Checkout() {
 
-  const { cart } = useCart();
+  const { cart, clearCart } = useCart();
 
   const total = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum,item)=>sum + item.price * item.quantity,
     0
   );
 
-  const placeOrder = async () => {
+  const placeOrder = () => {
 
-    try {
+    alert("Order placed successfully!");
 
-      const res = await authApi(
-        "/api/orders",
-        "POST",
-        {
-          items: cart,
-          total: total
-        }
-      );
-
-      alert("Order placed successfully");
-
-      console.log(res);
-
-    } catch (err) {
-
-      console.error(err);
-      alert("Order failed");
-
-    }
+    clearCart();
 
   };
 
   return (
-    <div className="p-10">
+    <div className="flex bg-gray-50 min-h-screen">
 
-      <h1 className="text-xl font-bold mb-6">
-        Checkout
-      </h1>
+      <Sidebar />
 
-      <button
-        onClick={placeOrder}
-        className="bg-green-600 text-white px-6 py-3 rounded"
-      >
-        Place Order
-      </button>
+      <div className="flex-1">
 
+        <Topbar />
+
+        <div className="p-6 max-w-xl">
+
+          <h1 className="text-xl font-semibold mb-6">
+            Checkout
+          </h1>
+
+          <div className="bg-white border p-6 rounded-xl">
+
+            <div className="flex justify-between mb-4">
+              <span>Total Amount</span>
+              <span className="font-bold">₹{total}</span>
+            </div>
+
+            <button
+              onClick={placeOrder}
+              className="bg-green-600 text-white px-6 py-3 rounded-xl w-full"
+            >
+              Place Order
+            </button>
+
+          </div>
+
+        </div>
+      </div>
     </div>
   );
 }

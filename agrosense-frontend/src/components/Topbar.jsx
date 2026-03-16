@@ -10,6 +10,7 @@ import NotificationBell from "./NotificationBell";
 import { useCart } from "../context/CartContext";
 
 export default function Topbar() {
+
   const [user, setUser] = useState(null);
   const [fields, setFields] = useState([]);
   const [active, setActive] = useState(getActiveField());
@@ -17,13 +18,13 @@ export default function Topbar() {
   const [fieldOpen, setFieldOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  const ref = useRef();
+  const ref = useRef(null);
   const navigate = useNavigate();
 
-  const { cart } = useCart();
+  const { cart } = useCart() || { cart: [] };
 
-  /* Load user & fields */
   useEffect(() => {
+
     setUser(getUserFromToken());
 
     authApi("/api/fields").then((res) => {
@@ -33,10 +34,11 @@ export default function Topbar() {
         setFields([]);
       }
     });
+
   }, []);
 
-  /* Close dropdowns when clicking outside */
   useEffect(() => {
+
     const close = (e) => {
       if (ref.current && !ref.current.contains(e.target)) {
         setFieldOpen(false);
@@ -47,59 +49,51 @@ export default function Topbar() {
     document.addEventListener("click", close);
 
     return () => document.removeEventListener("click", close);
+
   }, []);
 
   const selectField = (field) => {
+
     setActiveField(field);
     setActive(field);
-
     setFieldOpen(false);
 
     window.dispatchEvent(new Event("active-field-changed"));
+
   };
 
   const logout = () => {
-    localStorage.clear();
+
+    localStorage.removeItem("token");
+
     navigate("/login");
+
   };
 
   return (
     <header className="flex items-center justify-between p-5 bg-white border-b">
 
-      {/* ===== Left ===== */}
       <div>
-        <h1 className="text-lg font-semibold">
-          Dashboard
-        </h1>
-
+        <h1 className="text-lg font-semibold">Dashboard</h1>
         <p className="text-xs text-gray-500">
           Real-time insights for smarter farming decisions
         </p>
       </div>
 
-      {/* ===== Right ===== */}
-      <div
-        className="flex items-center gap-5 relative"
-        ref={ref}
-      >
+      <div className="flex items-center gap-5 relative" ref={ref}>
 
-        {/* 🔔 Notification Bell */}
         <NotificationBell />
 
-        {/* 🛒 Cart */}
         <button
           onClick={() => navigate("/cart")}
           className="relative flex items-center gap-2 border rounded-xl px-3 py-2 text-sm hover:bg-gray-50"
         >
           <ShoppingCart size={18} />
-
-          <span>
-            Cart ({cart.length})
-          </span>
+          <span>Cart ({cart.length})</span>
         </button>
 
-        {/* ===== Manage Fields ===== */}
         <div className="relative">
+
           <button
             onClick={() => setFieldOpen(!fieldOpen)}
             className="flex items-center gap-2 border rounded-xl px-3 py-2 text-sm hover:bg-gray-50"
@@ -116,9 +110,7 @@ export default function Topbar() {
                   key={f._id}
                   onClick={() => selectField(f)}
                   className={`block w-full text-left px-4 py-2 text-sm hover:bg-green-50 ${
-                    active?._id === f._id
-                      ? "bg-green-100"
-                      : ""
+                    active?._id === f._id ? "bg-green-100" : ""
                   }`}
                 >
                   {f.name}
@@ -127,9 +119,9 @@ export default function Topbar() {
 
             </div>
           )}
+
         </div>
 
-        {/* ===== Profile ===== */}
         <div className="relative">
 
           <button
