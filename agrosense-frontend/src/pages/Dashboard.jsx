@@ -44,7 +44,7 @@ export default function Dashboard() {
   const [soilMoisture, setSoilMoisture] = useState(null);
   const [weekly, setWeekly] = useState([]);
   const [harvest, setHarvest] = useState(null);
-
+  const [showCritical, setShowCritical] = useState(true);
   const token = localStorage.getItem("token");
 
   /* Listen to field change */
@@ -149,23 +149,35 @@ export default function Dashboard() {
             </p>
           </div>
 
-          {/* Alerts */}
-          <div className="space-y-3">
-            {criticalAlert && (
-              <AlertBanner
-                type={criticalAlert.type}
-                message={criticalAlert.message}
-              />
-            )}
+{/* Alerts */}
+<div className="space-y-3">
 
-            {insights?.alerts?.map((alert, i) => (
-              <AlertBanner
-                key={i}
-                type={alert.type}
-                message={alert.message}
-              />
-            ))}
-          </div>
+  {criticalAlert && showCritical && (
+    <div className="flex justify-between items-center border border-red-300 bg-red-50 text-red-600 p-4 rounded-xl">
+
+      <div>
+        🚨 {criticalAlert.message}
+      </div>
+
+      <button
+        onClick={() => setShowCritical(false)}
+        className="text-red-600 text-lg font-bold hover:text-red-800"
+      >
+        ×
+      </button>
+
+    </div>
+  )}
+
+  {insights?.alerts?.map((alert, i) => (
+    <AlertBanner
+      key={i}
+      type={alert.type}
+      message={alert.message}
+    />
+  ))}
+
+</div>
 
           {/* Stats */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">

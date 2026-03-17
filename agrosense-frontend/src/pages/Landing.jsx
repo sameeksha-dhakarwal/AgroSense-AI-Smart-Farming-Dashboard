@@ -6,9 +6,25 @@ export default function Landing() {
     <div className="min-h-screen bg-gray-50">
       <header className="flex items-center justify-between p-6 max-w-6xl mx-auto">
         <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-xl bg-green-600" />
+          <div className="h-9 w-9 rounded-xl bg-green-600 flex items-center justify-center">
+
+            {/* 🌱 Logo */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="white"
+              strokeWidth="2"
+              className="w-5 h-5"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M12 22V12M12 12C10 10 8 8 8 5M12 12C14 10 16 8 16 5" />
+            </svg>
+
+          </div>
           <div className="font-bold">AgroSense AI</div>
         </div>
+
         <div className="flex gap-2">
           <Link
             to="/login"
@@ -28,9 +44,11 @@ export default function Landing() {
       <main className="max-w-6xl mx-auto px-6 py-10">
         <div className="rounded-3xl bg-white border border-gray-200 p-10">
           <div className="text-4xl font-extrabold leading-tight">
-            Empowering Farmers with <span className="text-green-600">AI-Powered</span>{" "}
+            Empowering Farmers with{" "}
+            <span className="text-green-600">AI-Powered</span>{" "}
             Agriculture
           </div>
+
           <p className="text-gray-600 mt-4 max-w-2xl">
             Real-time monitoring, weather forecasting, smart irrigation, disease detection,
             and marketplace tools — built into one farmer-friendly dashboard.
@@ -43,6 +61,7 @@ export default function Landing() {
             >
               Get Started
             </Link>
+
             <a
               href="#features"
               className="px-5 py-3 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 font-semibold"
@@ -52,7 +71,9 @@ export default function Landing() {
           </div>
         </div>
 
+        {/* FEATURES */}
         <section id="features" className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+
           {[
             {
               title: "Environmental Monitoring",
@@ -66,12 +87,29 @@ export default function Landing() {
               title: "E-Commerce Marketplace",
               desc: "Buy seeds, fertilizers, and tools — and connect with trusted sellers.",
             },
+
+            /* NEW FEATURES */
+
+            {
+              title: "Smart Irrigation",
+              desc: "Automatically optimize watering schedules using AI insights.",
+            },
+            {
+              title: "Crop Price Insights",
+              desc: "Predict market prices and sell crops at the right time.",
+            },
+            {
+              title: "Farmer Marketplace",
+              desc: "Connect directly with buyers and sell your produce easily.",
+            },
+
           ].map((f) => (
             <div key={f.title} className="rounded-2xl bg-white border border-gray-200 p-6">
               <div className="font-bold">{f.title}</div>
               <div className="text-sm text-gray-600 mt-2">{f.desc}</div>
             </div>
           ))}
+
         </section>
       </main>
     </div>

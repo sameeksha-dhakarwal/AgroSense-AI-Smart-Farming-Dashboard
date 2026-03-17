@@ -19,26 +19,36 @@ const navItems = [
   { to: "/disease-scanner", label: "Disease Scanner", icon: ScanSearch },
   { to: "/irrigation", label: "Smart Irrigation", icon: Droplets },
   { to: "/price-forecast", label: "Price Forecast", icon: LineChart },
-
-  /* ===== NEW E-COMMERCE ITEM ===== */
   { to: "/ecommerce", label: "E-commerce", icon: Store },
-
   { to: "/marketplace", label: "Marketplace", icon: ShoppingCart },
-
-  /* ===== Manual Entry Removed ===== */
-
   { to: "/voice", label: "Voice Assistant", icon: Mic },
 ];
 
 export default function Sidebar() {
   return (
     <aside className="w-64 shrink-0 bg-white border-r border-gray-200 min-h-screen flex flex-col">
-      {/* ===== Logo ===== */}
+
+      {/* LOGO */}
       <div className="p-5 border-b">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-green-600 flex items-center justify-center text-white font-bold">
-            A
+
+          <div className="h-10 w-10 rounded-xl bg-green-600 flex items-center justify-center">
+
+            {/* 🌱 Grass Icon */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="white"
+              strokeWidth="2"
+              className="w-6 h-6"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M12 22V12M12 12C10 10 8 8 8 5M12 12C14 10 16 8 16 5" />
+            </svg>
+
           </div>
+
           <div>
             <div className="font-bold leading-tight">
               AgroSense AI
@@ -47,10 +57,11 @@ export default function Sidebar() {
               Smart Farming
             </div>
           </div>
+
         </div>
       </div>
 
-      {/* ===== Navigation ===== */}
+      {/* NAV */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
@@ -65,24 +76,22 @@ export default function Sidebar() {
               ].join(" ")
             }
           >
-            <Icon size={18} className="shrink-0" />
+            <Icon size={18} />
             <span>{label}</span>
           </NavLink>
         ))}
       </nav>
 
-      {/* ===== Tip Card ===== */}
+      {/* TIP */}
       <div className="p-4">
         <div className="rounded-2xl bg-gray-50 border p-4">
-          <div className="text-sm font-semibold">
-            Tip
-          </div>
+          <div className="text-sm font-semibold">Tip</div>
           <div className="text-xs text-gray-600 mt-1">
-            Keep soil moisture between 60–70% for healthy
-            growth.
+            Keep soil moisture between 60–70% for healthy growth.
           </div>
         </div>
       </div>
+
     </aside>
   );
 }
