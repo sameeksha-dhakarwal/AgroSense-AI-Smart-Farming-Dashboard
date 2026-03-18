@@ -4,8 +4,3 @@ Dataset : https://github.com/spMohanty/PlantVillage-Dataset
 agrosense-ml
 agrosense-frontend
 agrosense-backend
-
-E-commerce
-Marketplace
-
-
