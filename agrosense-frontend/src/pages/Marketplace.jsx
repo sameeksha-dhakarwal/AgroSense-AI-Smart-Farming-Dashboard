@@ -2,51 +2,57 @@ import React, { useState, useEffect } from "react";
 
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
+import CreateListingModal from "../components/CreateListingModal";
 
-import { getListings, createListing } from "../api";
+import { getListings, createListing, deleteListing } from "../api";
 
 export default function Marketplace() {
 
-  const [listings,setListings] = useState([]);
-  const [open,setOpen] = useState(false);
+  const [listings, setListings] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [toast, setToast] = useState("");
 
-  const [form,setForm] = useState({
-    cropName:"",
-    quantity:0,
-    unit:"Kilograms",
-    price:0,
-    description:""
-  });
-
-  useEffect(()=>{
-
+  useEffect(() => {
     getListings().then(setListings);
+  }, []);
 
-  },[]);
+  const submit = async (formData) => {
 
+    const res = await createListing(formData);
 
-  const submit = async ()=>{
-
-    const res = await createListing(form);
-
-    setListings([res,...listings]);
+    setListings([res, ...listings]);
 
     setOpen(false);
 
+    setToast("Listing created successfully");
+
+    setTimeout(() => setToast(""), 3000);
   };
 
-  return(
+  /* 🗑 DELETE FUNCTION */
+  const handleDelete = async (id) => {
 
+    await deleteListing(id);
+
+    setListings(listings.filter(item => item._id !== id));
+
+    setToast("Listing deleted");
+
+    setTimeout(() => setToast(""), 3000);
+  };
+
+  return (
     <div className="flex bg-gray-50 min-h-screen">
 
-      <Sidebar/>
+      <Sidebar />
 
       <div className="flex-1">
 
-        <Topbar/>
+        <Topbar />
 
         <div className="p-6 space-y-6">
 
+          {/* HEADER */}
           <div className="flex justify-between items-center">
 
             <div>
@@ -59,7 +65,7 @@ export default function Marketplace() {
             </div>
 
             <button
-              onClick={()=>setOpen(true)}
+              onClick={() => setOpen(true)}
               className="bg-green-600 text-white px-5 py-2 rounded-xl"
             >
               + Create Listing
@@ -71,117 +77,98 @@ export default function Marketplace() {
 
           <div className="space-y-4">
 
-            {listings.map(item=>(
+            {listings.map((item) => (
+
               <div
                 key={item._id}
-                className="bg-white p-5 rounded-xl border"
+                className="bg-white border rounded-2xl p-5 flex justify-between"
               >
 
-                <div className="flex justify-between">
+                {/* LEFT */}
+                <div className="flex gap-4">
+
+                  {/* Avatar */}
+                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-sm font-semibold">
+                    {item.seller?.name?.[0] || "U"}
+                  </div>
 
                   <div>
 
-                    <div className="font-semibold text-lg">
+                    <div className="font-semibold text-lg capitalize">
                       {item.cropName}
                     </div>
 
-                    <div className="text-gray-500">
+                    <div className="text-gray-500 text-sm">
                       {item.seller?.name}
                     </div>
 
-                  </div>
+                    <div className="mt-2 text-sm">
+                      Quantity{" "}
+                      <b>
+                        {item.quantity} {item.unit}
+                      </b>
+                    </div>
 
-                  <div className="text-green-600 font-bold">
-                    ₹{item.price}
+                    <p className="mt-1 text-gray-600 text-sm">
+                      {item.description}
+                    </p>
+
+                    {/* ❌ REPLACED WHATSAPP WITH DELETE */}
+                    <button
+                      onClick={() => handleDelete(item._id)}
+                      className="mt-3 bg-red-500 text-white px-4 py-1 rounded-xl text-sm hover:bg-red-600 transition"
+                    >
+                      Delete
+                    </button>
+
                   </div>
 
                 </div>
 
-                <div className="mt-3 text-sm text-gray-600">
-                  Quantity {item.quantity} {item.unit}
+                {/* RIGHT */}
+                <div className="text-right">
+
+                  <div className="text-sm text-gray-500">
+                    Price per {item.unit?.toLowerCase()}
+                  </div>
+
+                  <div className="text-green-600 font-bold text-lg">
+                    ₹{item.price}.00
+                  </div>
+
+                  <div className="mt-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full inline-block">
+                    active
+                  </div>
+
                 </div>
-
-                <p className="mt-2 text-gray-600">
-                  {item.description}
-                </p>
-
-                <button
-                  className="mt-4 border px-4 py-2 rounded-lg"
-                >
-                  WhatsApp
-                </button>
 
               </div>
+
             ))}
 
           </div>
 
-
-          {/* CREATE LISTING MODAL */}
-
-          {open && (
-
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-
-              <div className="bg-white p-6 rounded-xl w-[450px] space-y-3">
-
-                <h2 className="font-bold text-lg">
-                  Create New Listing
-                </h2>
-
-                <input
-                  placeholder="Crop Name"
-                  className="border p-2 rounded w-full"
-                  onChange={e=>setForm({...form,cropName:e.target.value})}
-                />
-
-                <input
-                  placeholder="Quantity"
-                  type="number"
-                  className="border p-2 rounded w-full"
-                  onChange={e=>setForm({...form,quantity:e.target.value})}
-                />
-
-                <input
-                  placeholder="Price per unit"
-                  type="number"
-                  className="border p-2 rounded w-full"
-                  onChange={e=>setForm({...form,price:e.target.value})}
-                />
-
-                <textarea
-                  placeholder="Description"
-                  className="border p-2 rounded w-full"
-                  onChange={e=>setForm({...form,description:e.target.value})}
-                />
-
-                <div className="flex justify-end gap-2">
-
-                  <button
-                    onClick={()=>setOpen(false)}
-                    className="border px-4 py-2 rounded"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    onClick={submit}
-                    className="bg-green-600 text-white px-4 py-2 rounded"
-                  >
-                    Create Listing
-                  </button>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          )}
-
         </div>
       </div>
+
+      {/* MODAL */}
+      {open && (
+        <CreateListingModal
+          onClose={() => setOpen(false)}
+          onCreate={submit}
+        />
+      )}
+
+      {/* TOAST */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 bg-white border shadow-lg rounded-xl p-4">
+          <div className="font-semibold">Success</div>
+          <div className="text-sm text-gray-500">
+            {toast}
+          </div>
+        </div>
+      )}
+
     </div>
   );
-
 }

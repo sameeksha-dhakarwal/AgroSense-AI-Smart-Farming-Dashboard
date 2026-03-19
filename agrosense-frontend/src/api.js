@@ -95,3 +95,14 @@ export const getListings = () =>
 
 export const createListing = (data) =>
   authApi("/api/listings","POST",data);
+
+export const deleteListing = async (id) => {
+  const res = await fetch(`http://localhost:5000/api/listings/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
+
+  return res.json();
+};

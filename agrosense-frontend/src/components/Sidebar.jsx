@@ -9,7 +9,7 @@ import {
   LineChart,
   ShoppingCart,
   Store,
-  Mic,
+  //Mic,
 } from "lucide-react";
 
 const navItems = [
@@ -21,7 +21,7 @@ const navItems = [
   { to: "/price-forecast", label: "Price Forecast", icon: LineChart },
   { to: "/ecommerce", label: "E-commerce", icon: Store },
   { to: "/marketplace", label: "Marketplace", icon: ShoppingCart },
-  { to: "/voice", label: "Voice Assistant", icon: Mic },
+  //{ to: "/voice", label: "Voice Assistant", icon: Mic },
 ];
 
 export default function Sidebar() {

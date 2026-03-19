@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ShoppingCart } from "lucide-react";
+import { ChevronDown, ShoppingCart, Mic } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { getUserFromToken } from "../utils/auth";
@@ -9,6 +9,9 @@ import { authApi } from "../api";
 import NotificationBell from "./NotificationBell";
 import { useCart } from "../context/CartContext";
 
+/* ✅ NEW: Voice Panel */
+import VoiceAssistantPanel from "./VoiceAssistantPanel";
+
 export default function Topbar() {
 
   const [user, setUser] = useState(null);
@@ -17,6 +20,9 @@ export default function Topbar() {
 
   const [fieldOpen, setFieldOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+
+  /* ✅ NEW: voice panel state */
+  const [voiceOpen, setVoiceOpen] = useState(false);
 
   const ref = useRef(null);
   const navigate = useNavigate();
@@ -71,89 +77,108 @@ export default function Topbar() {
   };
 
   return (
-    <header className="flex items-center justify-between p-5 bg-white border-b">
+    <>
+      <header className="flex items-center justify-between p-5 bg-white border-b">
 
-      <div>
-        <h1 className="text-lg font-semibold">Dashboard</h1>
-        <p className="text-xs text-gray-500">
-          Real-time insights for smarter farming decisions
-        </p>
-      </div>
+        <div>
+          <h1 className="text-lg font-semibold"></h1>
+          <p className="text-xs text-gray-500">
+            Real-time insights for smarter farming decisions
+          </p>
+        </div>
 
-      <div className="flex items-center gap-5 relative" ref={ref}>
+        <div className="flex items-center gap-5 relative" ref={ref}>
 
-        <NotificationBell />
+          {/* 🔔 Notifications */}
+          <NotificationBell />
 
-        <button
-          onClick={() => navigate("/cart")}
-          className="relative flex items-center gap-2 border rounded-xl px-3 py-2 text-sm hover:bg-gray-50"
-        >
-          <ShoppingCart size={18} />
-          <span>Cart ({cart.length})</span>
-        </button>
-
-        <div className="relative">
-
+          {/* 🎤 NEW MIC BUTTON */}
           <button
-            onClick={() => setFieldOpen(!fieldOpen)}
-            className="flex items-center gap-2 border rounded-xl px-3 py-2 text-sm hover:bg-gray-50"
+            onClick={() => setVoiceOpen(true)}
+            className="border rounded-xl p-2 hover:bg-gray-50"
           >
-            {active ? active.name : "Select Field"}
-            <ChevronDown size={16} />
+            <Mic size={18} />
           </button>
 
-          {fieldOpen && (
-            <div className="absolute right-0 mt-2 bg-white border rounded-xl shadow-md w-48 z-50">
+          {/* 🛒 CART */}
+          <button
+            onClick={() => navigate("/cart")}
+            className="relative flex items-center gap-2 border rounded-xl px-3 py-2 text-sm hover:bg-gray-50"
+          >
+            <ShoppingCart size={18} />
+            <span>Cart ({cart.length})</span>
+          </button>
 
-              {fields.map((f) => (
+          {/* FIELD SELECT */}
+          <div className="relative">
+
+            <button
+              onClick={() => setFieldOpen(!fieldOpen)}
+              className="flex items-center gap-2 border rounded-xl px-3 py-2 text-sm hover:bg-gray-50"
+            >
+              {active ? active.name : "Select Field"}
+              <ChevronDown size={16} />
+            </button>
+
+            {fieldOpen && (
+              <div className="absolute right-0 mt-2 bg-white border rounded-xl shadow-md w-48 z-50">
+
+                {fields.map((f) => (
+                  <button
+                    key={f._id}
+                    onClick={() => selectField(f)}
+                    className={`block w-full text-left px-4 py-2 text-sm hover:bg-green-50 ${
+                      active?._id === f._id ? "bg-green-100" : ""
+                    }`}
+                  >
+                    {f.name}
+                  </button>
+                ))}
+
+              </div>
+            )}
+
+          </div>
+
+          {/* PROFILE */}
+          <div className="relative">
+
+            <button
+              onClick={() => setProfileOpen(!profileOpen)}
+              className="h-9 w-9 rounded-full bg-green-600 text-white grid place-items-center font-semibold"
+            >
+              {user?.name?.[0]?.toUpperCase() || "U"}
+            </button>
+
+            {profileOpen && (
+              <div className="absolute right-0 mt-2 bg-white border rounded-xl shadow-md w-44 z-50">
+
                 <button
-                  key={f._id}
-                  onClick={() => selectField(f)}
-                  className={`block w-full text-left px-4 py-2 text-sm hover:bg-green-50 ${
-                    active?._id === f._id ? "bg-green-100" : ""
-                  }`}
+                  onClick={() => navigate("/change-password")}
+                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
                 >
-                  {f.name}
+                  Change Password
                 </button>
-              ))}
 
-            </div>
-          )}
+                <button
+                  onClick={logout}
+                  className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
+                >
+                  Logout
+                </button>
 
-        </div>
+              </div>
+            )}
 
-        <div className="relative">
-
-          <button
-            onClick={() => setProfileOpen(!profileOpen)}
-            className="h-9 w-9 rounded-full bg-green-600 text-white grid place-items-center font-semibold"
-          >
-            {user?.name?.[0]?.toUpperCase() || "U"}
-          </button>
-
-          {profileOpen && (
-            <div className="absolute right-0 mt-2 bg-white border rounded-xl shadow-md w-44 z-50">
-
-              <button
-                onClick={() => navigate("/change-password")}
-                className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
-              >
-                Change Password
-              </button>
-
-              <button
-                onClick={logout}
-                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
-              >
-                Logout
-              </button>
-
-            </div>
-          )}
+          </div>
 
         </div>
+      </header>
 
-      </div>
-    </header>
+      {/* 🎤 VOICE ASSISTANT PANEL */}
+      {voiceOpen && (
+        <VoiceAssistantPanel onClose={() => setVoiceOpen(false)} />
+      )}
+    </>
   );
 }

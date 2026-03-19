@@ -54,7 +54,7 @@ export default function App() {
 
         <Route path="/manual-entry" element={<ManualEntry />} />
 
-        <Route path="/voice" element={<VoiceAssistant />} />
+        
 
       </Route>
 
