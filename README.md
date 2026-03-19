@@ -39,31 +39,33 @@ The platform operates on the principle of:
 
 ---
 
-#  System Architecture
+##  Project Structure
 
+```
 AgroSense-AI
 │
 ├── agrosense-frontend
-│ ├── src
-│ │ ├── components
-│ │ ├── pages
-│ │ ├── context
-│ │ ├── api
-│ │ └── utils
-│ └── package.json
+│   ├── src
+│   │   ├── components
+│   │   ├── pages
+│   │   ├── context
+│   │   ├── api
+│   │   └── utils
+│   └── package.json
 │
 ├── agrosense-backend
-│ ├── src
-│ │ ├── routes
-│ │ ├── controllers
-│ │ ├── models
-│ │ ├── middleware
-│ │ └── config
-│ ├── uploads
-│ ├── .env
-│ └── package.json
+│   ├── src
+│   │   ├── routes
+│   │   ├── controllers
+│   │   ├── models
+│   │   ├── middleware
+│   │   └── config
+│   ├── uploads
+│   ├── .env
+│   └── package.json
 │
 └── README.md
+```
 
 
 ---
