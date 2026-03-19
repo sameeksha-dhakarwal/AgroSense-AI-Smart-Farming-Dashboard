@@ -41,28 +41,29 @@ The platform operates on the principle of:
 
 #  System Architecture
 
-
-Frontend (React + Tailwind + Vite)
+AgroSense-AI
 │
-▼
-REST API Layer (Node.js + Express)
+├── agrosense-frontend
+│ ├── src
+│ │ ├── components
+│ │ ├── pages
+│ │ ├── context
+│ │ ├── api
+│ │ └── utils
+│ └── package.json
 │
-▼
-MongoDB Database
+├── agrosense-backend
+│ ├── src
+│ │ ├── routes
+│ │ ├── controllers
+│ │ ├── models
+│ │ ├── middleware
+│ │ └── config
+│ ├── uploads
+│ ├── .env
+│ └── package.json
 │
-├── Field Data
-├── Weather Data
-├── Marketplace Listings
-├── Notifications
-│
-▼
-AI Processing Layer
-│
-├── Smart Logic Engine
-├── AI Recommendation System
-│
-▼
-Voice Assistant Interface
+└── README.md
 
 
 ---
