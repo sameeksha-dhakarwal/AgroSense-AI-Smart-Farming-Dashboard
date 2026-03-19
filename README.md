@@ -230,6 +230,12 @@ cd agrosense-frontend
 npm install
 npm run dev
 
+## 5. ML Setup
+
+ cd "E:\Projects\Agri AI\agrosense-ml"
+>> .\venv\Scripts\Activate.ps1
+>> uvicorn api.inference:app --reload
+
 
 ---
 
