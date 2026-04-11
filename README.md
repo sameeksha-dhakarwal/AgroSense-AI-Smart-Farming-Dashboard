@@ -367,6 +367,6 @@ By integrating **real-time data, predictive intelligence, and human-centric desi
 ---
 
 
-Developed by **[Your Name]**
+Developed by **Sameeksha Dhakarwal**
 
 ---
